@@ -315,6 +315,35 @@ to be buffered in memory.
 
 Note: increasing buffer size will increase memory usage by B<gmond>
 
+
+=head2 influxdb_send_channel
+
+B<gmond> can be used to send data directly to an InfluxDB database
+using the "Line Protocol" format supported by InfluxDB.  Messages are
+sent via UDP packets.  Zero or more B<influxdb_send_channel> sections
+can be included in gmond.conf.  If B<gmond> is configured as B<mute>,
+the section will be ignored.
+
+Multiple metrics will be packed into a single packet, subject to MTU
+limits.  This effectively means that a single metric + metric metadata
+is limited in size to < (MTU - UDP_Header), even though the Line Protocol
+format allows for much larger messages.
+
+  influxdb_send_channel {
+    host     = myinfluxdb.example.com
+    port     = 8089
+    database = influxdbname
+    default_tags = zone=us-east,host_class=hpc  //optional tags sent with each metric
+  }
+
+The B<host> and B<port> options indicate where to send the UDP packets.
+B<database> is the influxdb database to use.  The B<default_tags>
+option indicates a list of influxdb tags to append to every metric
+sent.  Tags are formatted as "key=value", and are joined with a ","
+(comma) character. Embedded spaces in tags must be properlt escaped.
+See https://docs.influxdata.com/influxdb/v0.11/write_protocols/line/
+for a full description of the tags format.
+
 =head2 tcp_accept_channel
 
 You can specify as many B<tcp_accept_channel> sections as you like

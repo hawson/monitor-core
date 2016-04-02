@@ -96,6 +96,14 @@ static cfg_opt_t udp_send_channel_opts[] = {
   CFG_END()
 };
 
+static cfg_opt_t influxdb_send_channel_opts[] = {
+  CFG_STR("host", NULL, CFGF_NONE ),
+  CFG_INT("port", -1, CFGF_NONE ),
+  CFG_STR("database", NULL, CFGF_NONE ),
+  CFG_STR("default_tags", NULL, CFGF_NONE),
+  CFG_END()
+};
+
 static cfg_opt_t udp_recv_channel_opts[] = {
   CFG_STR("mcast_join", NULL, CFGF_NONE ),
   CFG_STR("bind", NULL, CFGF_NONE ),
@@ -184,6 +192,7 @@ static cfg_opt_t gmond_opts[] = {
   CFG_SEC("globals",     globals_opts, CFGF_NONE), 
   CFG_SEC("udp_send_channel", udp_send_channel_opts, CFGF_MULTI),
   CFG_SEC("udp_recv_channel", udp_recv_channel_opts, CFGF_MULTI),
+  CFG_SEC("influxdb_send_channel", influxdb_send_channel_opts, CFGF_MULTI),
   CFG_SEC("tcp_accept_channel", tcp_accept_channel_opts, CFGF_MULTI),
   CFG_SEC("collection_group",  collection_group_opts, CFGF_MULTI),
   CFG_FUNC("include", Ganglia_cfg_include),
@@ -382,6 +391,50 @@ Ganglia_udp_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config )
     }
 
   return (Ganglia_udp_send_channels)send_channels;
+}
+
+/* Send create InfluxDB send channels */
+Ganglia_influxdb_send_channels
+Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config ) 
+{
+    apr_array_header_t *send_channels = NULL;
+    cfg_t *cfg = (cfg_t *) config;
+    unsigned int num_influxdb_send_channels = cfg_size ( cfg, "influxdb_send_channel");
+    int i;
+    apr_pool_t *context = (apr_pool_t*)p;
+
+    //No channels?  We're done here.
+    if (num_influxdb_send_channels <= 0) {
+        return (Ganglia_influxdb_send_channels)send_channels;
+    }
+
+    send_channels = apr_array_make(context, 
+                                   num_influxdb_send_channels, 
+                                   sizeof(apr_socket_t *));
+
+
+    for(i=0; i<num_influxdb_send_channels; i++) {
+        cfg_t *influxdb_send_channel;
+        int port = -1;
+        char *host, *database, *default_tags;
+
+        influxdb_send_channel = cfg_getnsec(cfg, "influxdb_send_channel", i);
+        host                  = cfg_getstr(influxdb_send_channel, "host");
+        port                  = cfg_getint(influxdb_send_channel, "port");
+        database              = cfg_getstr(influxdb_send_channel, "database");
+        default_tags          = cfg_getstr(influxdb_send_channel, "default_tags");
+
+        debug_msg("influxdb_send_channel: dest=%s:%d database=%s default_tags=%s",
+                  host ? host : "NULL",
+                  port,
+                  database ? database : "NULL",
+                  default_tags ? default_tags : "NULL");
+
+    }
+
+
+    return NULL;
+
 }
 
 

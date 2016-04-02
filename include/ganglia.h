@@ -29,6 +29,7 @@ typedef enum ganglia_slope ganglia_slope_t;
 typedef struct Ganglia_pool* Ganglia_pool;
 typedef struct Ganglia_gmond_config* Ganglia_gmond_config;
 typedef struct Ganglia_udp_send_channels* Ganglia_udp_send_channels;
+typedef struct Ganglia_influxdb_send_channels* Ganglia_influxdb_send_channels;
 
 struct Ganglia_metric {
    Ganglia_pool pool;
@@ -50,7 +51,12 @@ Ganglia_udp_send_channels
 Ganglia_udp_send_channels_create(Ganglia_pool p, Ganglia_gmond_config config);
 void Ganglia_udp_send_channels_destroy(Ganglia_udp_send_channels channels);
 
+Ganglia_influxdb_send_channels
+Ganglia_influxdb_send_channels_create(Ganglia_pool p, Ganglia_gmond_config config);
+void Ganglia_influxdb_send_channels_destroy(Ganglia_influxdb_send_channels channels);
+
 int Ganglia_udp_send_message(Ganglia_udp_send_channels channels, char *buf, int len );
+int Ganglia_influxdb_send_message(Ganglia_influxdb_send_channels channels, char *buf, int len );
 
 Ganglia_metric Ganglia_metric_create( Ganglia_pool parent_pool );
 int Ganglia_metric_set( Ganglia_metric gmetric, char *name, char *value, char *type, char *units, unsigned int slope, unsigned int tmax, unsigned int dmax);

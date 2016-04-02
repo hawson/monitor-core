@@ -114,6 +114,9 @@ char *module_dir = NULL;
 /* The array for outgoing UDP message channels */
 Ganglia_udp_send_channels udp_send_channels = NULL;
 
+/* Array for sending to influxdb databases */
+Ganglia_influxdb_send_channels influxdb_send_channels = NULL;
+
 /* TODO: The array for outgoing TCP message channels (later) */
 apr_array_header_t *tcp_send_array = NULL;
 
@@ -3389,7 +3392,11 @@ main ( int argc, char *argv[] )
   /* even if mute, a send channel may be needed to send a request for metadata */
   udp_send_channels = Ganglia_udp_send_channels_create((Ganglia_pool)global_context, 
                                                        (Ganglia_gmond_config)config_file);
-  if(!udp_send_channels)
+
+  /* setup influxdb channels */
+  influxdb_send_channels = Ganglia_influxdb_send_channels_create((Ganglia_pool)global_context, 
+                                                                 (Ganglia_gmond_config)config_file);
+  if(!udp_send_channels && !influxdb_send_channels)
     {
       /* if there are no send channels defined, we are equivalent to mute */
       mute = 1;
