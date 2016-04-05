@@ -2941,15 +2941,26 @@ void
 Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 {
     int i;
+    int num_elts = group->metric_array->nelts;
+
+    apr_pool_t *influxdb_pool = NULL;
+    apr_array_header_t * influxdb_metrics_list;
+
+    apr_pool_create(&influxdb_pool, global_context);
+    influxdb_metrics_list = apr_array_make(influxdb_pool, num_elts, sizeof(char *));
+    char *influxdb_msgs[INFLUXDB_MAX_MSGS]; // no more than this many msgs at a time. :-(
+
     
     /* This group needs to be sent */
-    for(i=0; i< group->metric_array->nelts; i++)
+    for(i=0; i< num_elts; i++)
       {
         XDR x;
         int len, errors;
         char metricmsg[max_udp_message_len];
         Ganglia_metric_callback *cb = ((Ganglia_metric_callback **)(group->metric_array->elts))[i];
         
+        debug_msg("  element %s:", cb->msg.Ganglia_value_msg_u.gstr.metric_id.name);
+
         /* Build the message */
         switch(cb->info->type)
           {
@@ -3074,6 +3085,41 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         ganglia_scoreboard_inc(PKTS_SENT_VALUE);
         ganglia_scoreboard_inc(PKTS_SENT_ALL);
 
+        //if (influxdb_send_channels && (i<INFLUXDB_MAX_MSGS)) {
+        if (influxdb_send_channels && 1) {
+            int influxdb_errors = 0;
+            char *influxdb_line = NULL;
+            char buf[max_udp_message_len];
+            int len;
+
+            debug_msg("    Processing influxdb line(%d)", i);
+
+            /* Add string to the list */
+            //influxdb_msgs[i] = apr_pstrcat(influxdb_pool,
+            //debug_msg("\thostname=%s", cb->msg.Ganglia_value_msg_u.gstr.metric_id.host);
+            //
+            
+
+            influxdb_line=strndupa(cb->msg.Ganglia_value_msg_u.gstr.metric_id.host, max_udp_message_len);
+
+            debug_msg("      hostname=%s", myname);
+            debug_msg("      metric=%s", cb->name);
+            debug_msg("      value=%s", host_metric_value(cb->info, &(cb->msg)));
+            debug_msg("      ts=%llu",  (unsigned long int)apr_time_now()*1000);
+
+            len = snprintf(buf, max_udp_message_len, "%s,hostname=%s,%s %s %lu\n", 
+                        cb->name,
+                        myname, // global var for hostname
+                        "default_keys_here",
+                        host_metric_value(cb->info, &(cb->msg)),
+                        (unsigned long int)apr_time_now()*1000
+                        );
+
+            influxdb_msgs[i] = apr_pstrdup(influxdb_pool, buf);
+
+            debug_msg("\tinfluxdb line: %s", influxdb_msgs[i]);
+        }
+
         if(!errors)
           {
             /* If the message send ok. Schedule the next time threshold. */
@@ -3081,8 +3127,16 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
           }
         else
             ganglia_scoreboard_inc(PKTS_SENT_FAILED);
-      }
-}
+      } /* end for() */
+
+    if (influxdb_send_channels) {
+        for(i=0; i<num_elts; i++) {
+            debug_msg("\tinflux line2(%d): %s", i, influxdb_msgs[i]);
+            //free(influxdb_msgs[i]);
+        }
+    }
+
+ }
  
 /* TODO: It might be necessary in the future to use a heap for the collection groups.
  * Running through an array should suffice for now */
