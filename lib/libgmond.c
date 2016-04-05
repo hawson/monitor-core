@@ -403,6 +403,8 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
     int i;
     apr_pool_t *context = (apr_pool_t*)p;
 
+    debug_msg("Found %d influxdb_send_channel stanzas", num_influxdb_send_channels);
+
     //No channels?  We're done here.
     if (num_influxdb_send_channels <= 0) {
         return (Ganglia_influxdb_send_channels)send_channels;
@@ -417,6 +419,8 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         cfg_t *influxdb_send_channel;
         int port = -1;
         char *host, *database, *default_tags;
+        apr_socket_t *socket = NULL;
+        apr_pool_t *pool = NULL;
 
         influxdb_send_channel = cfg_getnsec(cfg, "influxdb_send_channel", i);
         host                  = cfg_getstr(influxdb_send_channel, "host");
@@ -430,11 +434,13 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
                   database ? database : "NULL",
                   default_tags ? default_tags : "NULL");
 
+        apr_pool_create(&pool, context);
+        socket = create_udp_client(pool, host, port, NULL, NULL, 0); 
+        *(apr_socket_t **)apr_array_push(send_channels) = socket;
+        debug_msg("end of influx cfg loop");
     }
 
-
-    return NULL;
-
+    return (Ganglia_influxdb_send_channels)send_channels;
 }
 
 
