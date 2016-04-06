@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "ganglia_priv.h"
 #include "ganglia.h"
@@ -77,6 +78,46 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
     return (Ganglia_influxdb_send_channels)send_channels;
 }
 
+
+/* Given a string, try to guess the type:  INT, FLOAT, STRING */
+influxdb_types guess_type(const char* string) {
+
+    unsigned int base = 10;
+    char * endptr;
+    long int value;
+
+    errno = 0;
+
+    value = strtol(string, &endptr, base);
+
+    // if there's an error here, it's probably a string...
+    if (  (errno == ERANGE && (value == LONG_MAX || value == LONG_MIN))
+        ||(errno != 0 && value == 0)) {
+        perror("strtol");
+
+        debug_msg("\tguess error: %s, returning STR", string);
+
+        return STR;
+    }
+
+    // no digits found, so call it a string
+    if (endptr == string) {
+        debug_msg("\tno digits: %s, returning STR", string);
+        return STR;
+    }
+
+    if (*endptr != '\0') {
+        debug_msg("\cstuff left over: %s, returning FLOAT", string);
+        return FLOAT;
+    } else {
+        debug_msg("\tLooks good! %s, returning INT", string);
+        return INT;
+    }
+
+    debug_msg("\tI quit %s, returning UNDEF", string);
+    return UNDEF;
+
+}
 
 // Hostname should already be in the keys table
 influxdb_metric_t
