@@ -56,10 +56,11 @@ Ganglia_influxdb_send_channels Ganglia_influxdb_send_channels_create(
 
 influxdb_metric_t create_influxdb_metric(
     apr_pool_t *pool,
-    const char *metric_name,
+    const char *name,
     const char *value,
     enum influxdb_types type,
     unsigned long int timestamp) ;
 
+char * build_influxdb_line( apr_pool_t *pool, influxdb_metric_t *metric, char *hostname, const char *tags);
 
 #endif
