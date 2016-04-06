@@ -18,6 +18,8 @@
  * limit, and should be refactored...but C is like that. */
 #define INFLUXDB_MAX_MSGS 500
 
+/* values may not be longer than MAX_VALUE_LENGTH-1.  This is used for safeguarding some string searches */
+#define MAX_VALUE_LENGTH 1024
 
 /* typedefs, etc */
 
