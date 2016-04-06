@@ -82,9 +82,9 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 influxdb_metric_t
 create_influxdb_metric(
     apr_pool_t *pool,
-    const char *metric_name, 
+    const char *name,
     const char *value,
-    apr_table_t *keys,
+    influxdb_types type,
     unsigned long int timestamp) {
 
     influxdb_metric_t influxdb_metric;
@@ -96,3 +96,7 @@ create_influxdb_metric(
 
     return influxdb_metric;
 }
+
+
+/* EOF */
+
