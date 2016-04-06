@@ -33,14 +33,21 @@ typedef struct {
     char *value_value;
 } value_t;
 
-typedef struct {
+enum influxdb_types {
+    UNDEF = 0,  // if this is set, guess the type
+    INT   = 1,
+    FLOAT = 2,
+    STR   = 3
+};
+typedef enum influxdb_types influxdb_types;
+
+typedef struct influxdb_metric_t {
     unsigned long int timestamp; //time in NANOseconds <sigh>
     char *measurement;
     char *value;
+    unsigned int type;
     apr_table_t *keys;
 } influxdb_metric_t;
-
-
 
 /* Function prototypes */
 Ganglia_influxdb_send_channels Ganglia_influxdb_send_channels_create( 
@@ -51,7 +58,7 @@ influxdb_metric_t create_influxdb_metric(
     apr_pool_t *pool,
     const char *metric_name,
     const char *value,
-    apr_table_t *keys,
+    enum influxdb_types type,
     unsigned long int timestamp) ;
 
 
