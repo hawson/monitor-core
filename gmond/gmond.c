@@ -3067,9 +3067,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         //if (influxdb_send_channels && (i<INFLUXDB_MAX_MSGS)) {
         if (influxdb_send_channels && 1) {
             int influxdb_errors = 0;
-            char *influxdb_line = NULL;
             char buf[max_udp_message_len];
-            int len;
 
             debug_msg("    Processing influxdb line(%d)", i);
 
@@ -3079,12 +3077,10 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
             //
             
 
-            influxdb_line=strndupa(cb->msg.Ganglia_value_msg_u.gstr.metric_id.host, max_udp_message_len);
-
             debug_msg("      hostname=%s", myname);
             debug_msg("      metric=%s", cb->name);
             debug_msg("      value=%s", host_metric_value(cb->info, &(cb->msg)));
-            debug_msg("      ts=%llu",  (unsigned long int)apr_time_now()*1000);
+            debug_msg("      ts=%lu",  (unsigned long int)apr_time_now()*1000);
 
             len = snprintf(buf, max_udp_message_len, "%s,hostname=%s,%s %s %lu\n", 
                         cb->name,

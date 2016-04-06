@@ -78,8 +78,6 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 }
 
 
-
-
 // Hostname should already be in the keys table
 influxdb_metric_t
 create_influxdb_metric(

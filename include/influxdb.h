@@ -12,6 +12,15 @@
 //#include <apr_pools.h>
 #include <apr_tables.h>
 
+/* Defines */
+
+/* Maximum number of influxdb lines to process.  This is an arbitrary
+ * limit, and should be refactored...but C is like that. */
+#define INFLUXDB_MAX_MSGS 500
+
+
+/* typedefs, etc */
+
 typedef struct {
     char *tag_name;
     char *tag_value;
@@ -30,14 +39,8 @@ typedef struct {
 } influxdb_metric_t;
 
 
-/* Maximum number of influxdb lines to process.  This is an arbitrary
- * limit, and should be refactored...but C is like that. */
-#define INFLUXDB_MAX_MSGS 500
 
-
-
-
-/* Functions */
+/* Function prototypes */
 Ganglia_influxdb_send_channels Ganglia_influxdb_send_channels_create( 
     Ganglia_pool p, 
     Ganglia_gmond_config config );
@@ -48,5 +51,6 @@ influxdb_metric_t create_influxdb_metric(
     const char *value,
     apr_table_t *keys,
     unsigned long int timestamp) ;
+
 
 #endif
