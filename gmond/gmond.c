@@ -55,8 +55,6 @@
 #include "ganglia_priv.h"
 #include "influxdb.h"
 
-#define INFLUXDB_MAX_MSGS 500
-
 /* Specifies a single value metric callback */
 #define CB_NOINDEX -1
 
@@ -2917,25 +2915,6 @@ Ganglia_collection_group_collect( Ganglia_collection_group *group, apr_time_t no
   group->next_collect = now + (group->collect_every * APR_USEC_PER_SEC);
 }
 
-
-// Hostname should already be in the keys table
-influxdb_metric_t
-create_influxdb_metric(
-    apr_pool_t *pool,
-    const char *metric_name, 
-    const char *value,
-    apr_table_t *keys,
-    unsigned long int timestamp) {
-
-    influxdb_metric_t influxdb_metric;
-
-    //influxdb_metric.tags      = apr_pstrdup(pool, tags);
-    //influxdb_metric.value     = apr_pstrdup(pool, values);
-    //influxdb_metric.     = apr_pstrdup(pool, values);
-    //influxdb_metric.timestamp = (unsigned long int)apr_time_now()*1000;
-
-    return influxdb_metric;
-}
 
 void
 Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)

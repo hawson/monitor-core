@@ -11,6 +11,7 @@
 #include "ganglia_priv.h"
 #include "ganglia.h"
 #include "default_conf.h"
+#include "influxdb.h"
 
 #include <confuse.h>
 #include <apr_pools.h>
@@ -392,57 +393,6 @@ Ganglia_udp_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config )
 
   return (Ganglia_udp_send_channels)send_channels;
 }
-
-/* Send create InfluxDB send channels */
-Ganglia_influxdb_send_channels
-Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config ) 
-{
-    apr_array_header_t *send_channels = NULL;
-    cfg_t *cfg = (cfg_t *) config;
-    unsigned int num_influxdb_send_channels = cfg_size ( cfg, "influxdb_send_channel");
-    int i;
-    apr_pool_t *context = (apr_pool_t*)p;
-
-    debug_msg("Found %d influxdb_send_channel stanzas", num_influxdb_send_channels);
-
-    //No channels?  We're done here.
-    if (num_influxdb_send_channels <= 0) {
-        return (Ganglia_influxdb_send_channels)send_channels;
-    }
-
-    send_channels = apr_array_make(context, 
-                                   num_influxdb_send_channels, 
-                                   sizeof(apr_socket_t *));
-
-
-    for(i=0; i<num_influxdb_send_channels; i++) {
-        cfg_t *influxdb_send_channel;
-        int port = -1;
-        char *host, *database, *default_tags;
-        apr_socket_t *socket = NULL;
-        apr_pool_t *pool = NULL;
-
-        influxdb_send_channel = cfg_getnsec(cfg, "influxdb_send_channel", i);
-        host                  = cfg_getstr(influxdb_send_channel, "host");
-        port                  = cfg_getint(influxdb_send_channel, "port");
-        database              = cfg_getstr(influxdb_send_channel, "database");
-        default_tags          = cfg_getstr(influxdb_send_channel, "default_tags");
-
-        debug_msg("influxdb_send_channel: dest=%s:%d database=%s default_tags=%s",
-                  host ? host : "NULL",
-                  port,
-                  database ? database : "NULL",
-                  default_tags ? default_tags : "NULL");
-
-        apr_pool_create(&pool, context);
-        socket = create_udp_client(pool, host, port, NULL, NULL, 0); 
-        *(apr_socket_t **)apr_array_push(send_channels) = socket;
-        debug_msg("end of influx cfg loop");
-    }
-
-    return (Ganglia_influxdb_send_channels)send_channels;
-}
-
 
 /* This function will send a datagram to every udp_send_channel specified */
 int
