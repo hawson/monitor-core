@@ -128,14 +128,64 @@ create_influxdb_metric(
     influxdb_types type,
     unsigned long int timestamp) {
 
-    influxdb_metric_t influxdb_metric;
+    influxdb_metric_t metric;
 
-    //influxdb_metric.tags      = apr_pstrdup(pool, tags);
-    //influxdb_metric.value     = apr_pstrdup(pool, values);
-    //influxdb_metric.     = apr_pstrdup(pool, values);
-    //influxdb_metric.timestamp = (unsigned long int)apr_time_now()*1000;
+    metric.measurement = apr_pstrdup(pool, name);
+    metric.value       = apr_pstrdup(pool, value);
+    metric.timestamp   = timestamp ? timestamp : (unsigned long int)apr_time_now()*1000;
+    metric.type        = type ? type : guess_type(value);
+    //metric.tags      = apr_pstrdup(pool, tags);
 
-    return influxdb_metric;
+    return metric;
+}
+
+
+apr_table_t * get_influxdb_default_tags(void) {
+    return "";
+    return "default=key";
+}
+
+
+char * build_influxdb_line(
+    apr_pool_t  *pool,          // pool to use...
+    influxdb_metric_t *metric,  // single metric/value pair
+    char *hostname,       // NULL to use base hostname, !NULL for spoofing.
+    const char *tags           // a string of tags to add
+    ) {
+
+    char *local_hostname = NULL;
+    char *local_tags = "";
+    char *local_value = NULL;
+
+    char *default_tags = get_influxdb_default_tags();
+
+    if (*hostname) {
+        local_hostname = hostname;
+    } else {
+        apr_gethostname( local_hostname, APRMAXHOSTLEN+1, pool);
+    }
+
+    if (strnlen(default_tags, MAX_VALUE_LENGTH)) {
+        local_tags = apr_pstrcat(pool, ",", default_tags, NULL);
+    }
+
+    switch (guess_type(metric->value)) {
+        case INT:
+            local_value = apr_psprintf(pool, "%si", metric->value);
+            break;
+
+        default:
+            local_value = metric->value;
+    }
+
+
+    return apr_psprintf(pool, "%s,hostname=%s%s %s %lu",
+            metric->measurement,
+            local_hostname,
+            local_tags,
+            local_value,
+            metric->timestamp);
+
 }
 
 

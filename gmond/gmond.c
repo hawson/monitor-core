@@ -2923,10 +2923,11 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
     int num_elts = group->metric_array->nelts;
 
     apr_pool_t *influxdb_pool = NULL;
-    apr_array_header_t * influxdb_metrics_list;
-
     apr_pool_create(&influxdb_pool, global_context);
-    influxdb_metrics_list = apr_array_make(influxdb_pool, num_elts, sizeof(char *));
+
+    apr_array_header_t * influxdb_metrics_list;
+    influxdb_metrics_list = apr_array_make(influxdb_pool, num_elts, sizeof(const char *));
+
     char *influxdb_msgs[INFLUXDB_MAX_MSGS]; // no more than this many msgs at a time. :-(
 
     
@@ -3065,9 +3066,10 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         ganglia_scoreboard_inc(PKTS_SENT_ALL);
 
         //if (influxdb_send_channels && (i<INFLUXDB_MAX_MSGS)) {
-        if (influxdb_send_channels && 1) {
+        if (influxdb_send_channels && (i<INFLUXDB_MAX_MSGS)) {
             int influxdb_errors = 0;
             char buf[max_udp_message_len];
+            influxdb_metric_t metric;
 
             debug_msg("    Processing influxdb line(%d)", i);
 
@@ -3075,22 +3077,15 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
             //influxdb_msgs[i] = apr_pstrcat(influxdb_pool,
             //debug_msg("\thostname=%s", cb->msg.Ganglia_value_msg_u.gstr.metric_id.host);
             //
-            
 
             debug_msg("      hostname=%s", myname);
             debug_msg("      metric=%s", cb->name);
             debug_msg("      value=%s", host_metric_value(cb->info, &(cb->msg)));
             debug_msg("      ts=%lu",  (unsigned long int)apr_time_now()*1000);
 
-            len = snprintf(buf, max_udp_message_len, "%s,hostname=%s,%s %s %lu\n", 
-                        cb->name,
-                        myname, // global var for hostname
-                        "default_keys_here",
-                        host_metric_value(cb->info, &(cb->msg)),
-                        (unsigned long int)apr_time_now()*1000
-                        );
+            metric = create_influxdb_metric(influxdb_pool, cb->name, host_metric_value(cb->info, &(cb->msg)), INT, 0);
 
-            influxdb_msgs[i] = apr_pstrdup(influxdb_pool, buf);
+            influxdb_msgs[i] = build_influxdb_line(influxdb_pool, &metric, myname, NULL);
 
             debug_msg("\tinfluxdb line: %s", influxdb_msgs[i]);
         }
@@ -3106,7 +3101,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
     if (influxdb_send_channels) {
         for(i=0; i<num_elts; i++) {
-            debug_msg("\tinflux line2(%d): %s", i, influxdb_msgs[i]);
+            debug_msg("  influx line2(%d): %s", i, influxdb_msgs[i]);
             //free(influxdb_msgs[i]);
         }
     }
