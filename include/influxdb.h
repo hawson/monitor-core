@@ -63,4 +63,16 @@ influxdb_metric_t create_influxdb_metric(
 
 char * build_influxdb_line( apr_pool_t *pool, influxdb_metric_t *metric, char *hostname, const char *tags);
 
+
+/* given a string containing a value of some sort, try to determine the
+ * type, and return the appropriate code.  This is mostly to indicate
+ * to influxdb if a value is an INTEGER, so that it can marked as such.
+ * Specifically, ints are written to influx by appending an "i" to the 
+ * number.  Thus:  "4" is consider a float, whereas "4i" is an integer. */
+influxdb_types guess_type(const char* string);
+
+
+/* dumps a metric struct */
+void dump_metric(const influxdb_metric_t *metric);
+
 #endif
