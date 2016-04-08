@@ -107,7 +107,7 @@ influxdb_types guess_type(const char* string) {
     }
 
     if (*endptr != '\0') {
-        debug_msg("\cstuff left over: %s, returning FLOAT", string);
+        debug_msg("\tstuff left over: %s, returning FLOAT", string);
         return FLOAT;
     } else {
         debug_msg("\tLooks good! %s, returning INT", string);
@@ -141,6 +141,7 @@ create_influxdb_metric(
 
 
 apr_table_t * get_influxdb_default_tags(void) {
+
     return "";
     return "default=key";
 }
