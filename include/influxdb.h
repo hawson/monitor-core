@@ -50,10 +50,12 @@ typedef struct influxdb_metric_t {
 } influxdb_metric_t;
 
 /* Function prototypes */
-Ganglia_influxdb_send_channels Ganglia_influxdb_send_channels_create( 
+
+// this one in ganglia.h
+/*Ganglia_influxdb_send_channels Ganglia_influxdb_send_channels_create( 
     Ganglia_pool p, 
     Ganglia_gmond_config config );
-
+ */
 influxdb_metric_t create_influxdb_metric(
     apr_pool_t *pool,
     const char *name,
