@@ -29,15 +29,26 @@
 //#include <fnmatch.h>
 
 
+
+typedef struct influxdb_send_channel {
+    apr_socket_t *socket;
+    char *default_tags;
+} influxdb_send_channel;
+//typedef struct influxdb_send_channel* influxdb_send_channel;
+
 /* Send create InfluxDB send channels */
 Ganglia_influxdb_send_channels
 Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config ) 
 {
-    apr_array_header_t *send_channels = NULL;
-    cfg_t *cfg = (cfg_t *) config;
-    unsigned int num_influxdb_send_channels = cfg_size ( cfg, "influxdb_send_channel");
     int i;
     apr_pool_t *context = (apr_pool_t*)p;
+
+    apr_array_header_t *send_channels = NULL;
+    influxdb_send_channel *channel;
+
+    cfg_t *cfg = (cfg_t *) config;
+
+    unsigned int num_influxdb_send_channels = cfg_size ( cfg, "influxdb_send_channel");
 
     debug_msg("Found %d influxdb_send_channel stanzas", num_influxdb_send_channels);
 
@@ -48,21 +59,20 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
     send_channels = apr_array_make(context, 
                                    num_influxdb_send_channels, 
-                                   sizeof(apr_socket_t *));
+                                   sizeof(influxdb_send_channel*));
 
 
     for(i=0; i<num_influxdb_send_channels; i++) {
-        cfg_t *influxdb_send_channel = NULL;
+        channel = apr_palloc(context, sizeof(influxdb_send_channel));
+        cfg_t *influxdb_cfg = NULL;
         int port = -1;
         char *host, *database, *default_tags;
-        apr_socket_t *socket = NULL;
-        apr_pool_t *pool = NULL;
 
-        influxdb_send_channel = cfg_getnsec(cfg, "influxdb_send_channel", i);
-        host                  = cfg_getstr(influxdb_send_channel, "host");
-        port                  = cfg_getint(influxdb_send_channel, "port");
-        database              = cfg_getstr(influxdb_send_channel, "database");
-        default_tags          = cfg_getstr(influxdb_send_channel, "default_tags");
+        influxdb_cfg = cfg_getnsec(cfg, "influxdb_send_channel", i);
+        host         = cfg_getstr(influxdb_cfg, "host");
+        port         = cfg_getint(influxdb_cfg, "port");
+        database     = cfg_getstr(influxdb_cfg, "database");
+        default_tags = cfg_getstr(influxdb_cfg, "default_tags");
 
         debug_msg("influxdb_send_channel: dest=%s:%d database=%s default_tags=%s",
                   host ? host : "NULL",
@@ -70,15 +80,18 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
                   database ? database : "NULL",
                   default_tags ? default_tags : "NULL");
 
-        apr_pool_create(&pool, context);
+        channel->socket = create_udp_client(context, host, port, NULL, NULL, 0); 
+        //channel->default_tags = apr_pstrdup(p, default_tags);
+        channel->default_tags = "foobar";
 
-        socket = create_udp_client(pool, host, port, NULL, NULL, 0); 
-        if (!socket) {
+
+        if (!channel->socket) {
             err_msg("Unable to create UDP client for %s:%d. No route to IP? Exiting.", host, port);
             exit(1);
         }
 
-        *(apr_socket_t **)apr_array_push(send_channels) = socket;
+        *(influxdb_send_channel **)apr_array_push(send_channels) = channel;
+        //APR_ARRAY_PUSH(send_channels, *influxdb_send_channel) = *channel;
         debug_msg("end of influx cfg loop");
     }
 
@@ -147,7 +160,7 @@ create_influxdb_metric(
 }
 
 
-apr_table_t * get_influxdb_default_tags(void) {
+char * get_influxdb_default_tags(void) {
 
     return "";
     return "default=key";
@@ -209,39 +222,42 @@ void dump_metric(const influxdb_metric_t *metric) {
 
 int send_influxdb(
     apr_pool_t *pool, 
-    const Ganglia_influxdb_send_channels *influxdb_channels, 
-    const apr_array_header_t *metrics,
-    const Ganglia_gmond_config config
+    const apr_array_header_t *influxdb_channels, 
+    const apr_array_header_t *metrics
     ) {
 
-    apr_status_t status;
-    apr_size_t size;
+    //apr_status_t status;
+    //apr_size_t size;
     int num_errors = 0;
-    int i,j;
+    int i;
     int debug_level = get_debug_msg_level();
 
-    cfg_t *cfg = (cfg_t *) config;
-    cfg_t *influxdb_send_channel = NULL;
+    //apr_array_header_t *channel = (apr_array_header_t*)influxdb_channels;
 
-    apr_array_header_t *channel = (apr_array_header_t*)influxdb_channels;
-
-
+    /*
     if (debug_level) {
         influxdb_send_channel = cfg_getnsec(cfg, "influxdb_send_channel",i);
     }
+    */
 
-    for (i=0; i < channel->nelts; i++) {
+    for (i=0; i < influxdb_channels->nelts; i++) {
 
-        apr_socket_t *socket = ((apr_socket_t **)(channel->elts))[i];
+        influxdb_send_channel *channel;
+
+        //channel = (influxdb_send_channel*)influxdb_channels[i];
+        channel = (influxdb_send_channel*)&influxdb_channels[i];
+
+         //   = ((influxdb_send_channel **)influxdb_channels->elts)[i];
+        //influxdb_send_channel *channel = APR_ARRAY_IDX(influxdb_channels, i, *influxdb_send_channel);
         apr_array_header_t *metric = (apr_array_header_t*)metrics;
 
-        if (debug_level && influxdb_send_channel) {
-            char * host     = cfg_getstr(influxdb_send_channel, "host");
-            int port        = cfg_getint(influxdb_send_channel, "port");
-            char * def_tags = cfg_getstr(influxdb_send_channel, "default_tags");
-            char * database = cfg_getstr(influxdb_send_channel, "database");
+        if (debug_level ) {
+            //char * host     = cfg_getstr(influxdb_send_channel, "host");
+            //int port        = cfg_getint(influxdb_send_channel, "port");
+            //char * default_tags = cfg_getstr(influxdb_send_channel, "default_tags");
+            //char * database = cfg_getstr(influxdb_send_channel, "database");
 
-            debug_msg("send_influxdb(%d=%s@%s:%d->%s)", i, database,host, port, def_tags);
+            debug_msg("send_influxdb(%s)", channel->default_tags);
         }
 
         for (int m=0; m < metrics->nelts; m++) {
