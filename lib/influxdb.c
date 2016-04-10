@@ -40,7 +40,6 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
     apr_pool_t *context = (apr_pool_t*)p;
 
     apr_array_header_t *send_channels = NULL;
-    influxdb_send_channel *channel;
 
     cfg_t *cfg = (cfg_t *) config;
 
@@ -59,10 +58,15 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
 
     for(i=0; i<num_influxdb_send_channels; i++) {
-        channel = apr_palloc(context, sizeof(influxdb_send_channel));
+
+        influxdb_send_channel *channel = apr_palloc(context, sizeof(influxdb_send_channel));
+
         cfg_t *influxdb_cfg = NULL;
         int port = -1;
-        char *host, *database, *default_tags;
+        char *host = NULL; 
+        char *database = NULL;
+        char *default_tags = NULL;
+        int def_tag_len =0;
 
         influxdb_cfg = cfg_getnsec(cfg, "influxdb_send_channel", i);
         host         = cfg_getstr(influxdb_cfg, "host");
@@ -70,15 +74,17 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         database     = cfg_getstr(influxdb_cfg, "database");
         default_tags = cfg_getstr(influxdb_cfg, "default_tags");
 
+        def_tag_len = strnlen(default_tags, MAX_DEF_TAG_LENGTH);
+        strncpy(channel->default_tags, default_tags, MAX_DEF_TAG_LENGTH);
+        channel->default_tags[def_tag_len] = '\0';
+
         debug_msg("influxdb_send_channel: dest=%s:%d database=%s default_tags=%s",
                   host ? host : "NULL",
                   port,
                   database ? database : "NULL",
-                  default_tags ? default_tags : "NULL");
+                  channel->default_tags ? channel->default_tags : "NULL");
 
         channel->socket = create_udp_client(context, host, port, NULL, NULL, 0); 
-        //channel->default_tags = apr_pstrdup(p, default_tags);
-        channel->default_tags = "foobar";
 
 
         if (!channel->socket) {
@@ -86,8 +92,8 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
             exit(1);
         }
 
-        *(influxdb_send_channel **)apr_array_push(send_channels) = channel;
-        //APR_ARRAY_PUSH(send_channels, *influxdb_send_channel) = *channel;
+        //*(influxdb_send_channel **)apr_array_push(send_channels) = channel;
+        APR_ARRAY_PUSH(send_channels, influxdb_send_channel*) = channel;
         debug_msg("end of influx cfg loop");
     }
 
@@ -130,7 +136,7 @@ influxdb_types guess_type(const char* string) {
         return INT;
     }
 
-    debug_msg("\tI quit %s, returning UNDEF", string);
+    debug_msg("\tNo clue: %s, returning UNDEF", string);
     return UNDEF;
 
 }
@@ -240,8 +246,8 @@ int send_influxdb(
 
         influxdb_send_channel *channel;
 
-        //channel = (influxdb_send_channel*)influxdb_channels[i];
-        channel = (influxdb_send_channel*)&influxdb_channels[i];
+        //channel = (influxdb_send_channel*) &influxdb_channels[i];
+        channel = APR_ARRAY_IDX(influxdb_channels, i, influxdb_send_channel*);
 
          //   = ((influxdb_send_channel **)influxdb_channels->elts)[i];
         //influxdb_send_channel *channel = APR_ARRAY_IDX(influxdb_channels, i, *influxdb_send_channel);
@@ -253,7 +259,7 @@ int send_influxdb(
             //char * default_tags = cfg_getstr(influxdb_send_channel, "default_tags");
             //char * database = cfg_getstr(influxdb_send_channel, "database");
 
-            debug_msg("send_influxdb(%s)", channel->default_tags);
+            debug_msg("send_influxdb def_tags: %s", channel->default_tags);
         }
 
         for (int m=0; m < metrics->nelts; m++) {
