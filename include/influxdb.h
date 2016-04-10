@@ -22,6 +22,9 @@
 /* values may not be longer than MAX_VALUE_LENGTH-1.  This is used for safeguarding some string searches */
 #define MAX_VALUE_LENGTH 1024
 
+/* max size of defualt tags */
+#define MAX_DEF_TAG_LENGTH 1024
+
 /* typedefs, etc */
 
 typedef struct {
