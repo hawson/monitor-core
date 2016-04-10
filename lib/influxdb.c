@@ -18,7 +18,7 @@
 #include <apr_pools.h>
 #include <apr_strings.h>
 #include <apr_tables.h>
-#include <apr_net.h>
+//#include <apr_net.h>
 //#include <apr_file_io.h>
 //#include <apr_network_io.h>
 #include <apr_lib.h>
@@ -30,10 +30,6 @@
 
 
 
-typedef struct influxdb_send_channel {
-    apr_socket_t *socket;
-    char *default_tags;
-} influxdb_send_channel;
 //typedef struct influxdb_send_channel* influxdb_send_channel;
 
 /* Send create InfluxDB send channels */

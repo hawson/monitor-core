@@ -11,6 +11,7 @@
 //#include <apr.h>
 //#include <apr_pools.h>
 #include <apr_tables.h>
+#include <apr_net.h>
 
 /* Defines */
 
@@ -56,6 +57,16 @@ typedef struct influxdb_metric_t {
     Ganglia_pool p, 
     Ganglia_gmond_config config );
  */
+
+/* this is different from the normal ganglia UDP send channels, 
+ * since we have to carry along the default tags.  So far as I can tell, 
+ * the normal ganglia UDP channels are "merely" apr_socket_t pointers;
+ * we need a bit more than that */
+typedef struct influxdb_send_channel {
+    apr_socket_t *socket; 
+    char default_tags[MAX_VALUE_LENGTH]; //meh, should be char*
+} influxdb_send_channel;
+
 influxdb_metric_t create_influxdb_metric(
     apr_pool_t *pool,
     const char *name,
@@ -76,5 +87,8 @@ influxdb_types guess_type(const char* string);
 
 /* dumps a metric struct */
 void dump_metric(const influxdb_metric_t *metric);
+
+/* send metrics to influxdb channels */
+int send_influxdb ( apr_pool_t *pool, const apr_array_header_t *influxdb_channels, const apr_array_header_t *metrics );
 
 #endif
