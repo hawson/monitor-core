@@ -117,26 +117,26 @@ influxdb_types guess_type(const char* string) {
         ||(errno != 0 && value == 0)) {
         perror("strtol");
 
-        debug_msg("\tguess error: %s, returning STR", string);
+        debug_msg("\tGT:guess error: %s, returning STR", string);
 
         return STR;
     }
 
     // no digits found, so call it a string
     if (endptr == string) {
-        debug_msg("\tno digits: %s, returning STR", string);
+        debug_msg("\tGT:no digits: %s, returning STR", string);
         return STR;
     }
 
     if (*endptr != '\0') {
-        debug_msg("\tstuff left over: %s, returning FLOAT", string);
+        debug_msg("\tGT:stuff left over: %s, returning FLOAT", string);
         return FLOAT;
     } else {
-        debug_msg("\tLooks good! %s, returning INT", string);
+        debug_msg("\tGT:Looks good! %s, returning INT", string);
         return INT;
     }
 
-    debug_msg("\tNo clue: %s, returning UNDEF", string);
+    debug_msg("\tGT:No clue: %s, returning UNDEF", string);
     return UNDEF;
 
 }
