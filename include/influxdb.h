@@ -49,7 +49,7 @@ typedef struct influxdb_metric_t {
     unsigned long int timestamp; //time in NANOseconds <sigh>
     char *measurement;
     char *value;
-    unsigned int type;
+    enum influxdb_types type;
     apr_table_t *keys;
 } influxdb_metric_t;
 
