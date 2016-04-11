@@ -214,6 +214,10 @@ char * build_influxdb_line(
 
 void dump_metric(const influxdb_metric_t *metric) {
     const influxdb_types type = metric->type;
+
+    if (!metric)
+        return;
+
     debug_msg("      metric=%s", metric->measurement);
     debug_msg("      value=%s", metric->value);
     debug_msg("      type=%s", INT   == type ? "INT" :
