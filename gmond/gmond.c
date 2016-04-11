@@ -3110,6 +3110,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
                 //free(influxdb_msgs[i]);
             }
         }
+        apr_array_clear(influxdb_metrics_list);
     }
 
  }
