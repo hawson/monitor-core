@@ -70,7 +70,7 @@ typedef struct influxdb_send_channel {
     char default_tags[MAX_VALUE_LENGTH]; //meh, should be char*
 } influxdb_send_channel;
 
-influxdb_metric_t create_influxdb_metric(
+influxdb_metric_t * create_influxdb_metric(
     apr_pool_t *pool,
     const char *name,
     const char *value,

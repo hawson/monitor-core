@@ -2,11 +2,7 @@
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <ctype.h>
 #include <errno.h>
 
 #include "ganglia_priv.h"
@@ -18,16 +14,9 @@
 #include <apr_pools.h>
 #include <apr_strings.h>
 #include <apr_tables.h>
-//#include <apr_net.h>
-//#include <apr_file_io.h>
-//#include <apr_network_io.h>
+#include "apr_net.h"
+#include <apr_network_io.h>
 #include <apr_lib.h>
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
-//#include <dirent.h>
-//#include <fnmatch.h>
-
 
 
 //typedef struct influxdb_send_channel* influxdb_send_channel;
@@ -142,7 +131,7 @@ influxdb_types guess_type(const char* string) {
 }
 
 // Hostname should already be in the keys table
-influxdb_metric_t
+influxdb_metric_t *
 create_influxdb_metric(
     apr_pool_t *pool,
     const char *name,
@@ -150,12 +139,14 @@ create_influxdb_metric(
     influxdb_types type,
     unsigned long int timestamp) {
 
-    influxdb_metric_t metric;
+    influxdb_metric_t *metric;
+    metric = apr_palloc(pool, sizeof(influxdb_metric_t));
+    
 
-    metric.measurement = apr_pstrdup(pool, name);
-    metric.value       = apr_pstrdup(pool, value);
-    metric.timestamp   = timestamp ? timestamp : (unsigned long int)apr_time_now()*1000;
-    metric.type        = type ? type : guess_type(value);
+    metric->measurement = apr_pstrdup(pool, name);
+    metric->value       = apr_pstrdup(pool, value);
+    metric->timestamp   = timestamp ? timestamp : (unsigned long int)apr_time_now()*1000;
+    metric->type        = type ? type : guess_type(value);
     //metric.tags      = apr_pstrdup(pool, tags);
 
     return metric;
@@ -218,7 +209,7 @@ void dump_metric(const influxdb_metric_t *metric) {
     if (!metric)
         return;
 
-    debug_msg("      metric=%s", metric->measurement);
+    debug_msg("   ---metric=%s", metric->measurement);
     debug_msg("      value=%s", metric->value);
     debug_msg("      type=%s", INT   == type ? "INT" :
                                FLOAT == type ? "FLOAT" :
@@ -238,39 +229,29 @@ int send_influxdb(
     int i;
     int debug_level = get_debug_msg_level();
 
-    //apr_array_header_t *channel = (apr_array_header_t*)influxdb_channels;
-
-    /*
-    if (debug_level) {
-        influxdb_send_channel = cfg_getnsec(cfg, "influxdb_send_channel",i);
-    }
-    */
-
     for (i=0; i < influxdb_channels->nelts; i++) {
 
         influxdb_send_channel *channel;
-
-        //channel = (influxdb_send_channel*) &influxdb_channels[i];
         channel = APR_ARRAY_IDX(influxdb_channels, i, influxdb_send_channel*);
 
-         //   = ((influxdb_send_channel **)influxdb_channels->elts)[i];
-        //influxdb_send_channel *channel = APR_ARRAY_IDX(influxdb_channels, i, *influxdb_send_channel);
-        apr_array_header_t *metric = (apr_array_header_t*)metrics;
-
         if (debug_level ) {
-            //char * host     = cfg_getstr(influxdb_send_channel, "host");
-            //int port        = cfg_getint(influxdb_send_channel, "port");
-            //char * default_tags = cfg_getstr(influxdb_send_channel, "default_tags");
-            //char * database = cfg_getstr(influxdb_send_channel, "database");
-
             debug_msg("send_influxdb def_tags: %s", channel->default_tags);
         }
 
+        debug_msg("  starting metric loop");
         for (int m=0; m < metrics->nelts; m++) {
-
-            
+            influxdb_metric_t *metric;
+            metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
+            debug_msg("metric[%d]: meas=%s value=%s ts=%lu", 
+                        m, 
+                        metric->measurement,
+                        metric->value,
+                        metric->timestamp
+                        ) ;
 
         }
+
+
 
 
     }
