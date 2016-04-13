@@ -172,6 +172,7 @@ char * build_influxdb_line(
     char *local_value = NULL;
 
     char *default_tags = get_influxdb_default_tags();
+    char empty_str[]="";
 
     if (hostname) {
         local_hostname = hostname;
@@ -179,8 +180,12 @@ char * build_influxdb_line(
         apr_gethostname( local_hostname, APRMAXHOSTLEN+1, pool);
     }
 
-    if (strnlen(default_tags, MAX_VALUE_LENGTH)) {
-        local_tags = apr_pstrcat(pool, ",", default_tags, NULL);
+    if (tags) {
+        local_tags = apr_pstrcat(pool, ",", tags, NULL);
+    }
+
+    if (!local_tags) {
+        local_tags = empty_str;
     }
 
     switch (guess_type(metric->value)) {
@@ -224,8 +229,8 @@ int send_influxdb(
     const char *hostname
     ) {
 
-    //apr_status_t status;
-    //apr_size_t size;
+    apr_status_t status;
+    apr_size_t size;
     int num_errors = 0;
     int i;
     int debug_level = get_debug_msg_level();
@@ -244,15 +249,16 @@ int send_influxdb(
             influxdb_metric_t *metric;
             char *line;
             metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
-            debug_msg("metric[%d]: meas=%s value=%s ts=%lu hostname=%s", 
+            debug_msg("metric[%d]: meas=%s value=%s ts=%lu hostname=%s tags=%s", 
                         m, 
                         metric->measurement,
                         metric->value,
                         metric->timestamp,
-                        hostname
+                        hostname,
+                        channel->default_tags
                         ) ;
 
-            line = build_influxdb_line(pool, metric, hostname, NULL);
+            line = build_influxdb_line(pool, metric, hostname, channel->default_tags);
             debug_msg("-->%s", line);
 
         }
