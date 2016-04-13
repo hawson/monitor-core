@@ -77,7 +77,7 @@ influxdb_metric_t * create_influxdb_metric(
     enum influxdb_types type,
     unsigned long int timestamp) ;
 
-char * build_influxdb_line( apr_pool_t *pool, influxdb_metric_t *metric, char *hostname, const char *tags);
+char * build_influxdb_line( apr_pool_t *pool, influxdb_metric_t *metric, const char *hostname, const char *tags);
 
 
 /* given a string containing a value of some sort, try to determine the
@@ -92,6 +92,6 @@ influxdb_types guess_type(const char* string);
 void dump_metric(const influxdb_metric_t *metric);
 
 /* send metrics to influxdb channels */
-int send_influxdb ( apr_pool_t *pool, const apr_array_header_t *influxdb_channels, const apr_array_header_t *metrics );
+int send_influxdb ( apr_pool_t *pool, const apr_array_header_t *influxdb_channels, const apr_array_header_t *metrics, const char *hostname );
 
 #endif

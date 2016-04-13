@@ -163,17 +163,17 @@ char * get_influxdb_default_tags(void) {
 char * build_influxdb_line(
     apr_pool_t  *pool,          // pool to use...
     influxdb_metric_t *metric,  // single metric/value pair
-    char *hostname,       // NULL to use base hostname, !NULL for spoofing.
+    const char *hostname,       // NULL to use base hostname, !NULL for spoofing.
     const char *tags           // a string of tags to add
     ) {
 
     char *local_hostname = NULL;
-    char *local_tags = "";
+    char *local_tags = NULL;
     char *local_value = NULL;
 
     char *default_tags = get_influxdb_default_tags();
 
-    if (*hostname) {
+    if (hostname) {
         local_hostname = hostname;
     } else {
         apr_gethostname( local_hostname, APRMAXHOSTLEN+1, pool);
@@ -220,7 +220,8 @@ void dump_metric(const influxdb_metric_t *metric) {
 int send_influxdb(
     apr_pool_t *pool, 
     const apr_array_header_t *influxdb_channels, 
-    const apr_array_header_t *metrics
+    const apr_array_header_t *metrics,
+    const char *hostname
     ) {
 
     //apr_status_t status;
@@ -241,13 +242,18 @@ int send_influxdb(
         debug_msg("  starting metric loop");
         for (int m=0; m < metrics->nelts; m++) {
             influxdb_metric_t *metric;
+            char *line;
             metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
-            debug_msg("metric[%d]: meas=%s value=%s ts=%lu", 
+            debug_msg("metric[%d]: meas=%s value=%s ts=%lu hostname=%s", 
                         m, 
                         metric->measurement,
                         metric->value,
-                        metric->timestamp
+                        metric->timestamp,
+                        hostname
                         ) ;
+
+            line = build_influxdb_line(pool, metric, hostname, NULL);
+            debug_msg("-->%s", line);
 
         }
 
