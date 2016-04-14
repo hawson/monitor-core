@@ -226,18 +226,26 @@ int send_influxdb(
     apr_pool_t *pool, 
     const apr_array_header_t *influxdb_channels, 
     const apr_array_header_t *metrics,
-    const char *hostname
+    const char *hostname,
+    int max_udp_message_len
     ) {
 
     apr_status_t status;
     apr_size_t size;
+    int debug_level = get_debug_msg_level();
     int num_errors = 0;
     int i;
-    int debug_level = get_debug_msg_level();
 
     for (i=0; i < influxdb_channels->nelts; i++) {
 
+        char* buf = NULL;
+        apr_size_t buf_len = 0;
+        int lines;
         influxdb_send_channel *channel;
+        apr_pool_t *channel_pool;
+
+        apr_pool_create(&channel_pool, pool);
+
         channel = APR_ARRAY_IDX(influxdb_channels, i, influxdb_send_channel*);
 
         if (debug_level ) {
@@ -248,8 +256,11 @@ int send_influxdb(
         for (int m=0; m < metrics->nelts; m++) {
             influxdb_metric_t *metric;
             char *line;
+            int line_len;
+
             metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
-            debug_msg("metric[%d]: meas=%s value=%s ts=%lu hostname=%s tags=%s", 
+
+            debug_msg("  metric[%d]: meas=%s value=%s ts=%lu hostname=%s tags=%s", 
                         m, 
                         metric->measurement,
                         metric->value,
@@ -258,17 +269,45 @@ int send_influxdb(
                         channel->default_tags
                         ) ;
 
-            line = build_influxdb_line(pool, metric, hostname, channel->default_tags);
-            debug_msg("-->%s", line);
+            line = build_influxdb_line(channel_pool, metric, hostname, channel->default_tags);
+            line_len = strnlen(line, max_udp_message_len);
+            debug_msg("    (%d)->%s", line_len, line);
+
+            /* check current buf_len + new_line_len >= maximum length:  send! */
+            if (buf && (buf_len + line_len >= max_udp_message_len)) {
+                // emit UDP packet!
+                int orig_len = buf_len;
+                status = apr_socket_send(channel->socket, buf, &buf_len);
+                debug_msg("####(%d,%d,%d) %s", buf_len, orig_len, status, buf);
+                lines = 0;
+                buf = NULL;
+            }
+
+            /* if !buf, make it */
+            if (!buf) {
+                buf = apr_pstrdup(channel_pool, line);
+                buf_len = line_len;
+                lines = 1;
+            } else {
+                buf = apr_pstrcat(channel_pool, buf, "\n", line, NULL);
+                buf_len = strnlen(buf, max_udp_message_len);
+                lines+=1;
+            }
 
         }
-
-
+        if (lines) {
+            // emit UDP cleanup packet!
+            int orig_len = buf_len;
+            status = apr_socket_send(channel->socket, buf, &buf_len);
+            debug_msg("###C(%d,%d,%d) %s", buf_len, orig_len, status, buf);
+            lines = 0;
+            buf = NULL;
+        }
+        apr_pool_destroy(channel_pool);
 
 
     }
 
-    
 
     return num_errors;
 }

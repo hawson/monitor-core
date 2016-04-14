@@ -3106,7 +3106,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
     /* send the influxdb messages:  all metrics to all channels, cleanup when done. */
     if (influxdb_send_channels) {
-        send_influxdb(influxdb_pool, (apr_array_header_t *)influxdb_send_channels, influxdb_metrics_list, myname);
+        send_influxdb(influxdb_pool, (apr_array_header_t *)influxdb_send_channels, influxdb_metrics_list, myname, max_udp_message_len);
         /* clear up our influxdb allocations */
         apr_pool_destroy(influxdb_pool);
     }

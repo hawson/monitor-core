@@ -92,6 +92,6 @@ influxdb_types guess_type(const char* string);
 void dump_metric(const influxdb_metric_t *metric);
 
 /* send metrics to influxdb channels */
-int send_influxdb ( apr_pool_t *pool, const apr_array_header_t *influxdb_channels, const apr_array_header_t *metrics, const char *hostname );
+int send_influxdb ( apr_pool_t *pool, const apr_array_header_t *influxdb_channels, const apr_array_header_t *metrics, const char *hostname, int max_udp_message_len );
 
 #endif
