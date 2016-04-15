@@ -14,6 +14,7 @@
 #include <apr_pools.h>
 #include <apr_strings.h>
 #include <apr_tables.h>
+#include <apr_errno.h>
 #include "apr_net.h"
 #include <apr_network_io.h>
 #include <apr_lib.h>
@@ -215,6 +216,23 @@ void dump_metric(const influxdb_metric_t *metric) {
     debug_msg("      ts=%lu", metric->timestamp);
 }
 
+apr_status_t influxdb_emit_udp(
+    apr_socket_t *socket,
+    char* buf,
+    apr_size_t *buf_len) {
+    apr_status_t status = apr_socket_send(socket, buf, buf_len);
+
+    if(status) {
+        char error[128] = "";
+        char *rv;
+        rv = apr_strerror(status, error, sizeof(error));
+        debug_msg("  Send error %lu: %s", status, error);
+    }
+
+    return status;
+
+}
+
 int send_influxdb(
     apr_pool_t *pool, 
     const apr_array_header_t *influxdb_channels, 
@@ -268,31 +286,46 @@ int send_influxdb(
 
             /* check current buf_len + new_line_len >= maximum length:  send! */
             if (buf && (buf_len + line_len >= max_udp_message_len)) {
-                // emit UDP packet!
+                
                 int orig_len = buf_len;
-                status = apr_socket_send(channel->socket, buf, &buf_len);
-                debug_msg("####(%d,%d,%d) %s", buf_len, orig_len, status, buf);
+                buf_len = strnlen(buf, max_udp_message_len);
+
+                /* append newline if needed */
+                if ('\n' != buf[buf_len-1]) {
+                    buf = apr_pstrcat(channel_pool, buf, "\n", NULL);
+                }
+
+                status = influxdb_emit_udp(channel->socket, buf, &buf_len);
+                debug_msg("##0C(%lu,%lu,%d) %s", buf_len, orig_len, status, buf);
                 lines = 0;
                 buf = NULL;
             }
 
             /* if !buf, make it */
             if (!buf) {
-                buf = apr_pstrdup(channel_pool, line);
+                buf = apr_pstrcat(channel_pool, line, "\n", NULL);
                 buf_len = line_len;
                 lines = 1;
             } else {
-                buf = apr_pstrcat(channel_pool, buf, "\n", line, NULL);
+                buf = apr_pstrcat(channel_pool, buf, line, "\n", NULL);
                 buf_len = strnlen(buf, max_udp_message_len);
                 lines+=1;
             }
 
         }
+
         if (lines) {
-            // emit UDP cleanup packet!
+            // emit final (perhaps only) UDP packet for this batch of metrics!
             int orig_len = buf_len;
-            status = apr_socket_send(channel->socket, buf, &buf_len);
-            debug_msg("###C(%d,%d,%d) %s", buf_len, orig_len, status, buf);
+            buf_len = strnlen(buf, max_udp_message_len);
+
+            /* append newline if needed */
+            if ('\n' != buf[buf_len-1]) {
+                buf = apr_pstrcat(channel_pool, buf, "\n", NULL);
+            }
+
+            status = influxdb_emit_udp(channel->socket, buf, &buf_len);
+            debug_msg("##1C(%lu,%lu,%d) %s", buf_len, orig_len, status, buf);
             lines = 0;
             buf = NULL;
         }
