@@ -153,12 +153,6 @@ create_influxdb_metric(
 }
 
 
-char * get_influxdb_default_tags(void) {
-
-    return "";
-    return "default=key";
-}
-
 
 char * build_influxdb_line(
     apr_pool_t  *pool,          // pool to use...
@@ -171,7 +165,6 @@ char * build_influxdb_line(
     char *local_tags = NULL;
     char *local_value = NULL;
 
-    char *default_tags = get_influxdb_default_tags();
     char empty_str[]="";
 
     if (hostname) {
