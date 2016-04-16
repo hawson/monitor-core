@@ -144,7 +144,7 @@ create_influxdb_metric(
     metric = apr_palloc(pool, sizeof(influxdb_metric_t));
     
 
-    metric->measurement = apr_pstrdup(pool, name);
+    metric->name        = apr_pstrdup(pool, name);
     metric->value       = apr_pstrdup(pool, value);
     metric->timestamp   = timestamp ? timestamp : (unsigned long int)apr_time_now()*1000;
     metric->type        = type ? type : guess_type(value);
@@ -192,10 +192,11 @@ char * build_influxdb_line(
     }
 
 
-    return apr_psprintf(pool, "%s,hostname=%s%s %s %lu",
-            metric->measurement,
+    return apr_psprintf(pool, "%s,hostname=%s%s %s=%s %lu",
+            metric->measurement ? metric->measurement : metric->name,
             local_hostname,
             local_tags,
+            metric->name,
             local_value,
             metric->timestamp);
 
@@ -208,7 +209,7 @@ void dump_metric(const influxdb_metric_t *metric) {
     if (!metric)
         return;
 
-    debug_msg("   ---metric=%s", metric->measurement);
+    debug_msg("   ---metric=%s", metric->name);
     debug_msg("      value=%s", metric->value);
     debug_msg("      type=%s", INT   == type ? "INT" :
                                FLOAT == type ? "FLOAT" :
@@ -273,7 +274,7 @@ int send_influxdb(
 
             debug_msg("  metric[%d]: meas=%s value=%s ts=%lu hostname=%s tags=%s", 
                         m, 
-                        metric->measurement,
+                        metric->name,
                         metric->value,
                         metric->timestamp,
                         hostname,

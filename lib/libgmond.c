@@ -142,6 +142,7 @@ static cfg_opt_t collection_group_opts[] = {
   CFG_BOOL("collect_once", 0, CFGF_NONE),  
   CFG_INT("collect_every", 60, CFGF_NONE),    
   CFG_INT("time_threshold", 3600, CFGF_NONE),    /* tmax */
+  CFG_STR("collection_name", NULL, CFGF_NONE),   /* optional! used for InfluxDB support */
   CFG_END()
 };
 
