@@ -64,8 +64,11 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         database     = cfg_getstr(influxdb_cfg, "database");
         default_tags = cfg_getstr(influxdb_cfg, "default_tags");
 
-        def_tag_len = strnlen(default_tags, MAX_DEF_TAG_LENGTH);
-        strncpy(channel->default_tags, default_tags, MAX_DEF_TAG_LENGTH);
+        if (default_tags) {
+            def_tag_len = strnlen(default_tags, MAX_DEF_TAG_LENGTH);
+            strncpy(channel->default_tags, default_tags, MAX_DEF_TAG_LENGTH);
+        }
+
         channel->default_tags[def_tag_len] = '\0';
 
         debug_msg("influxdb_send_channel: dest=%s:%d database=%s default_tags=%s",
