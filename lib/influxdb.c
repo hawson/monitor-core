@@ -54,14 +54,12 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         cfg_t *influxdb_cfg = NULL;
         int port = -1;
         char *host = NULL; 
-        char *database = NULL;
         char *default_tags = NULL;
         int def_tag_len =0;
 
         influxdb_cfg = cfg_getnsec(cfg, "influxdb_send_channel", i);
         host         = cfg_getstr(influxdb_cfg, "host");
         port         = cfg_getint(influxdb_cfg, "port");
-        database     = cfg_getstr(influxdb_cfg, "database");
         default_tags = cfg_getstr(influxdb_cfg, "default_tags");
 
         if (default_tags) {
@@ -71,10 +69,9 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
         channel->default_tags[def_tag_len] = '\0';
 
-        debug_msg("influxdb_send_channel: dest=%s:%d database=%s default_tags=%s",
+        debug_msg("influxdb_send_channel: dest=%s:%d default_tags=%s",
                   host ? host : "NULL",
                   port,
-                  database ? database : "NULL",
                   channel->default_tags ? channel->default_tags : "NULL");
 
         channel->socket = create_udp_client(context, host, port, NULL, NULL, 0); 

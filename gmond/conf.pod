@@ -332,15 +332,13 @@ format allows for much larger messages.
   influxdb_send_channel {
     host     = myinfluxdb.example.com
     port     = 8089
-    database = influxdbname
     default_tags = zone=us-east,host_class=hpc  //optional tags sent with each metric
   }
 
 The B<host> and B<port> options indicate where to send the UDP packets.
-B<database> is the influxdb database to use.  The B<default_tags>
-option indicates a list of influxdb tags to append to every metric
-sent.  Tags are formatted as "key=value", and are joined with a ","
-(comma) character. Embedded spaces in tags must be properlt escaped.
+The B<default_tags> option indicates a list of influxdb tags to append to
+every metric sent.  Tags are formatted as "key=value", and are joined with
+a "," (comma) character. Embedded spaces in tags must be properlt escaped.
 See https://docs.influxdata.com/influxdb/v0.11/write_protocols/line/
 for a full description of the tags format.
 
