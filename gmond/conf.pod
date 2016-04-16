@@ -486,6 +486,71 @@ to note is the use of substitutions within the argument to B<title>.
 
 If both B<name> and B<name_match> are specified, then B<name> is ignored.
 
+If InfluxDB is being used, adding the B<measurement> attribute
+is I<strongly> recommended.  When present, gmond will use it as a
+C<measurement> name when sending data to influxdb, set tags and values
+as necessary.  By way of explanation:  InfluxDB organizes data into
+C<databases>, which contain C<series> of data.  Each series contains
+C<measurements> at a specific C<timestamp>.  Each measurement contains
+one or more C<values>.  Gmond will convert collected metrics as best it
+can to fit this data model.
+
+If B<measurement> is not used, the metric name is re-used as the
+InfluxDB "measurement."  This is a sub-optimal configuration, so far as
+the InfluxDB schema is concerned, but it "should" work.
+
+Using the "cpu_num" example from above, when data from that group is
+sent to influxdb, an InfluxDB line simliar to this will be sent:
+
+  cpu_num,hostname=stardust cpu_num=32i 1460780807726182000
+
+This duplicates the value "cpu_num" as the measurement.
+
+A better configuration is to have a collection group similar to:
+
+  collection_group {
+    measurement = "cpu"
+    collect_once   = yes
+    time_threshold = 1800
+    metric {
+      name = "cpu_num"
+      title = "Number of CPUs"
+    }
+  }
+
+  collection_group {
+    measurement = "cpu"
+    collect_every = 60
+    time_threshold = 300
+    metric {
+      name = "cpu_user"
+      value_threshold = 5.0
+      title = "CPU User"
+    }
+  }
+
+  collection_group {
+    measurement = "mem"
+    metric { 
+     name = "mem_free"
+    }
+  }
+
+Sample output lines for these three collection groups and corresponding
+metrics could look like this:
+
+  cpu,hostname=stardust cpu_num=32i 1460782210505141000
+  cpu,hostname=stardust cpu_user=13.11 1460782210505334000
+  mem,hostname=stardust mem_free=116000i 1460782210505388000
+
+Each collection_group has a B<measurement> attribute, with two of the
+three groups having the same value.  This is okay, and in some cases
+suggested configuration.  For example, network packets in/out and network
+bytes in/out may be in different collection groups, but are each could
+clearly be part of "net" measurement within InfluxDB.
+
+
+
 =head2 Modules
 
 A B<modules> section contains the parameters that are necessary to load a
