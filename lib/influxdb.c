@@ -189,6 +189,10 @@ char * build_influxdb_line(
             local_value = apr_psprintf(pool, "%si", metric->value);
             break;
 
+        case STR:
+            local_value = apr_psprintf(pool, "\"%s\"", metric->value);
+            break;
+
         default:
             local_value = metric->value;
     }
