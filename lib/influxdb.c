@@ -276,11 +276,9 @@ int influxdb_escape(char* dest, const char* src, unsigned int maxlen) {
             case ' ':
             case ',': i++;
                       *dest++ = '\\';
-            default:  *dest = *src;
+            default:  *dest++ = *src++;
         }
         i++;
-        *src++;
-        *dest++;
         *dest=0;
     }
 
@@ -297,8 +295,9 @@ char * influxdb_escape_string(apr_pool_t *pool, const char* str) {
     strlen = strnlen(str, MAX_VALUE_LENGTH);
 
     if (strlen) {
-        newstr = apr_palloc(pool, (strlen+1) * 2);  //worst case...
-        influxdb_escape(newstr, str, strlen);
+        int newstrlen = strlen * 2 + 1; //worst case: escape everything + null
+        newstr = apr_palloc(pool, newstrlen);  
+        influxdb_escape(newstr, str, newstrlen);
     }
 
     return newstr;
