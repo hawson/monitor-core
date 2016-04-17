@@ -112,9 +112,19 @@ influxdb_types guess_type(const char* string) {
         return STR;
     }
 
-    // no digits found, so call it a string
+    // no digits found.  Possibly a boolean or string
     if (endptr == string) {
-        debug_msg("\tGT:no digits: %s, returning STR", string);
+
+        if (strcmp("t", string) || strcmp("f", string) ||
+            strcmp("T", string) || strcmp("F", string) ||
+            strcmp("true", string) || strcmp("false", string) ||
+            strcmp("True", string) || strcmp("False", string) ||
+            strcmp("TRUE", string) || strcmp("FALSE", string)) {
+            debug_msg("\tGT:no digits, looks like a bool: %s, returning STR", string);
+            return BOOL;
+        }
+
+        debug_msg("\tGT:no digits, not bool: %s, returning STR", string);
         return STR;
     }
 

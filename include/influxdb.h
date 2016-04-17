@@ -41,7 +41,8 @@ enum influxdb_types {
     UNDEF = 0,  // if this is set, guess the type
     INT   = 1,
     FLOAT = 2,
-    STR   = 3
+    STR   = 3,
+    BOOL  = 4
 };
 typedef enum influxdb_types influxdb_types;
 
