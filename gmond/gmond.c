@@ -2936,7 +2936,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         influxdb_metrics_list = apr_array_make(influxdb_pool, num_elts, sizeof(influxdb_metric_t *));
         memset(influxdb_msgs, 0, sizeof (char *)*INFLUXDB_MAX_MSGS);
     }
-    
+
     /* This group needs to be sent */
     for(i=0; i< num_elts; i++)
       {
@@ -3082,14 +3082,20 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
             /* create a new metric obbject from the main metric structure */
             //metric = apr_palloc(influxdb_pool, sizeof(influxdb_metric_t));
-            metric = create_influxdb_metric(influxdb_pool, cb->name, host_metric_value(cb->info, &(cb->msg)), group->measurement, INT, 0);
+            metric = create_influxdb_metric(
+                    influxdb_pool,
+                    cb->name,
+                    host_metric_value(cb->info, &(cb->msg)),
+                    influxdb_escape_string(influxdb_pool, group->measurement), //make sure it's escaped here...
+                    INT,
+                    0);
 
             dump_metric(metric);
 
             /* Add string to the list */
             influxdb_msgs[i] = build_influxdb_line(influxdb_pool, metric, myname, NULL);
             debug_msg("\tinfluxdb line: %s", influxdb_msgs[i]);
-            
+
             /* Add metric to the list, processed later by send_influxdb() */
             APR_ARRAY_PUSH(influxdb_metrics_list, influxdb_metric_t*) = metric;
             //*(influxdb_metric_t*)apr_array_push(influxdb_metrics_list) = *metric;

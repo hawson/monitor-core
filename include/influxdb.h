@@ -58,17 +58,17 @@ typedef struct influxdb_metric_t {
 /* Function prototypes */
 
 // this one in ganglia.h
-/*Ganglia_influxdb_send_channels Ganglia_influxdb_send_channels_create( 
-    Ganglia_pool p, 
+/*Ganglia_influxdb_send_channels Ganglia_influxdb_send_channels_create(
+    Ganglia_pool p,
     Ganglia_gmond_config config );
  */
 
-/* this is different from the normal ganglia UDP send channels, 
- * since we have to carry along the default tags.  So far as I can tell, 
+/* this is different from the normal ganglia UDP send channels,
+ * since we have to carry along the default tags.  So far as I can tell,
  * the normal ganglia UDP channels are "merely" apr_socket_t pointers;
  * we need a bit more than that */
 typedef struct influxdb_send_channel {
-    apr_socket_t *socket; 
+    apr_socket_t *socket;
     char default_tags[MAX_VALUE_LENGTH]; //meh, should be char*
 } influxdb_send_channel;
 
@@ -86,7 +86,7 @@ char * build_influxdb_line( apr_pool_t *pool, influxdb_metric_t *metric, const c
 /* given a string containing a value of some sort, try to determine the
  * type, and return the appropriate code.  This is mostly to indicate
  * to influxdb if a value is an INTEGER, so that it can marked as such.
- * Specifically, ints are written to influx by appending an "i" to the 
+ * Specifically, ints are written to influx by appending an "i" to the
  * number.  Thus:  "4" is consider a float, whereas "4i" is an integer. */
 influxdb_types guess_type(const char* string);
 

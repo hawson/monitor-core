@@ -24,7 +24,7 @@
 
 /* Send create InfluxDB send channels */
 Ganglia_influxdb_send_channels
-Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config ) 
+Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config )
 {
     int i;
     apr_pool_t *context = (apr_pool_t*)p;
@@ -42,8 +42,8 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         return (Ganglia_influxdb_send_channels)send_channels;
     }
 
-    send_channels = apr_array_make(context, 
-                                   num_influxdb_send_channels, 
+    send_channels = apr_array_make(context,
+                                   num_influxdb_send_channels,
                                    sizeof(influxdb_send_channel*));
 
 
@@ -53,7 +53,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
         cfg_t *influxdb_cfg = NULL;
         int port = -1;
-        char *host = NULL; 
+        char *host = NULL;
         char *default_tags = NULL;
         int def_tag_len =0;
 
@@ -74,7 +74,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
                   port,
                   channel->default_tags ? channel->default_tags : "NULL");
 
-        channel->socket = create_udp_client(context, host, port, NULL, NULL, 0); 
+        channel->socket = create_udp_client(context, host, port, NULL, NULL, 0);
 
 
         if (!channel->socket) {
@@ -153,7 +153,7 @@ create_influxdb_metric(
 
     influxdb_metric_t *metric;
     metric = apr_palloc(pool, sizeof(influxdb_metric_t));
-    
+
 
     metric->name        = apr_pstrdup(pool, name);
     metric->measurement = apr_pstrdup(pool, measurement);
@@ -351,7 +351,7 @@ int send_influxdb(
 
             /* check current buf_len + new_line_len >= maximum length:  send! */
             if (buf && (buf_len + line_len >= max_udp_message_len)) {
-                
+
                 int orig_len = buf_len;
                 buf_len = strnlen(buf, max_udp_message_len);
 
