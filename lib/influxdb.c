@@ -236,9 +236,56 @@ apr_status_t influxdb_emit_udp(
 
 }
 
+//take string in src, and escape all "chr" characters with
+//the "escape" character.
+//THE CALLING FUNCTION MUST ENSURE THAT dest IS BIG ENOUGH!!!!
+//returns non-zero on error.
+int influxdb_escape(char* dest, const char* src, unsigned int maxlen) {
+    int rc = 0;
+    int i=0;
+    char* pos = NULL;
+
+    if (!src)
+        return 1;
+    if (!dest)
+        return 2;
+
+    while (*src  && (i < maxlen)) {
+        switch (*src) {
+            case ' ':
+            case ',': i++;
+                      *dest++ = '\\';
+            default:  *dest = *src;
+        }
+        i++;
+        *src++;
+        *dest++;
+        *dest=0;
+    }
+
+    return rc;
+}
+
+char * influxdb_escape_string(apr_pool_t *pool, const char* str) {
+    char *newstr = NULL;
+    int strlen = 0;
+
+    if (NULL == str)
+        return NULL;
+
+    strlen = strnlen(str, MAX_VALUE_LENGTH);
+
+    if (strlen) {
+        newstr = apr_palloc(pool, (strlen+1) * 2);  //worst case...
+        influxdb_escape(newstr, str, strlen);
+    }
+
+    return newstr;
+}
+
 int send_influxdb(
-    apr_pool_t *pool, 
-    const apr_array_header_t *influxdb_channels, 
+    apr_pool_t *pool,
+    const apr_array_header_t *influxdb_channels,
     const apr_array_header_t *metrics,
     const char *hostname,
     int max_udp_message_len
