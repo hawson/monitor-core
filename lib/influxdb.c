@@ -312,7 +312,6 @@ int send_influxdb(
     ) {
 
     apr_status_t status;
-    apr_size_t size;
     int debug_level = get_debug_msg_level();
     int num_errors = 0;
     int i;
