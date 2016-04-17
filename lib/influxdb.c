@@ -33,7 +33,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
     cfg_t *cfg = (cfg_t *) config;
 
-    unsigned int num_influxdb_send_channels = cfg_size ( cfg, "influxdb_send_channel");
+    int num_influxdb_send_channels = cfg_size ( cfg, "influxdb_send_channel");
 
     debug_msg("Found %d influxdb_send_channel stanzas", num_influxdb_send_channels);
 
@@ -44,7 +44,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
     send_channels = apr_array_make(context,
                                    num_influxdb_send_channels,
-                                   sizeof(influxdb_send_channel*));
+                                   (int)sizeof(influxdb_send_channel*));
 
 
     for(i=0; i<num_influxdb_send_channels; i++) {
@@ -52,15 +52,20 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         influxdb_send_channel *channel = apr_palloc(context, sizeof(influxdb_send_channel));
 
         cfg_t *influxdb_cfg = NULL;
-        int port = -1;
+        long int port = 0;
         char *host = NULL;
         char *default_tags = NULL;
         int def_tag_len =0;
 
-        influxdb_cfg = cfg_getnsec(cfg, "influxdb_send_channel", i);
+        influxdb_cfg = cfg_getnsec(cfg, "influxdb_send_channel", (unsigned int) i);
         host         = cfg_getstr(influxdb_cfg, "host");
         port         = cfg_getint(influxdb_cfg, "port");
         default_tags = cfg_getstr(influxdb_cfg, "default_tags");
+
+        if (!host)
+            err_quit("Invalid or missing influxdb_send_channel->host attribute");
+        if (!port)
+            err_quit("Invalid or missing influxdb_send_channel->port attribute");
 
         if (default_tags) {
             def_tag_len = strnlen(default_tags, MAX_DEF_TAG_LENGTH);
@@ -69,21 +74,20 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
         channel->default_tags[def_tag_len] = '\0';
 
-        debug_msg("influxdb_send_channel: dest=%s:%d default_tags=%s",
+        debug_msg("influxdb_send_channel: dest=%s:%lu default_tags=%s",
                   host ? host : "NULL",
                   port,
                   channel->default_tags ? channel->default_tags : "NULL");
 
         channel->socket = create_udp_client(context, host, port, NULL, NULL, 0);
 
-
         if (!channel->socket) {
-            err_msg("Unable to create UDP client for %s:%d. No route to IP? Exiting.", host, port);
-            exit(1);
+            err_msg("Unable to create UDP client for %s:%lu. No route to IP? Exiting.", host, port);
+            exit(EXIT_FAILURE);
         }
 
-        //*(influxdb_send_channel **)apr_array_push(send_channels) = channel;
         APR_ARRAY_PUSH(send_channels, influxdb_send_channel*) = channel;
+        cfg_free(influxdb_cfg);
         debug_msg("end of influx cfg loop");
     }
 
@@ -183,7 +187,10 @@ char * build_influxdb_line(
     if (hostname) {
         local_hostname = hostname;
     } else {
-        apr_gethostname( local_hostname, APRMAXHOSTLEN+1, pool);
+        int rc = apr_gethostname( local_hostname, APRMAXHOSTLEN+1, pool);
+        if (rc) {
+            err_sys("Error getting hostname(%d)", rc);
+        }
     }
 
     if (tags) {
@@ -243,7 +250,7 @@ apr_status_t influxdb_emit_udp(
         char error[128] = "";
         char *rv;
         rv = apr_strerror(status, error, sizeof(error));
-        debug_msg("  Send error %lu: %s", status, error);
+        debug_msg("  Send error (%s) %u: %s", rv, status, error);
     }
 
     return status;
@@ -257,7 +264,7 @@ apr_status_t influxdb_emit_udp(
 int influxdb_escape(char* dest, const char* src, unsigned int maxlen) {
     int rc = 0;
     int i=0;
-    char* pos = NULL;
+    //char* pos = NULL;
 
     if (!src)
         return 1;
@@ -318,8 +325,12 @@ int send_influxdb(
         int lines;
         influxdb_send_channel *channel;
         apr_pool_t *channel_pool;
+        apr_status_t status;
 
-        apr_pool_create(&channel_pool, pool);
+        status = apr_pool_create(&channel_pool, pool);
+        if (status) {
+            err_quit("Failed to create influxdb channel pool! (%d) at %s:%d", status, __FILE__,__LINE__);
+        }
 
         channel = APR_ARRAY_IDX(influxdb_channels, i, influxdb_send_channel*);
 
@@ -336,14 +347,14 @@ int send_influxdb(
             metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
 
             debug_msg("  metric[%d]: name=%s meas=%s value=%s ts=%lu hostname=%s tags=%s",
-                        m,
-                        influxdb_escape_string(pool, metric->name),
-                        influxdb_escape_string(pool, metric->measurement),
-                        metric->value,
-                        metric->timestamp,
-                        influxdb_escape_string(pool, hostname), /* incase "hostname" is really a service or non-host-like object */
-                        channel->default_tags /* this is not escaped here, as it is assumed the user has alread handled this in the .conf file. Ha. */
-                        ) ;
+                m,
+                influxdb_escape_string(pool, metric->name),
+                influxdb_escape_string(pool, metric->measurement),
+                metric->value,
+                metric->timestamp,
+                influxdb_escape_string(pool, hostname), /* incase "hostname" is really a service or non-host-like object */
+                channel->default_tags /* this is not escaped here, as it is assumed the user has alread handled this in the .conf file. Ha. */
+            ) ;
 
             line = build_influxdb_line(channel_pool, metric, hostname, channel->default_tags);
             line_len = strnlen(line, max_udp_message_len);
@@ -352,7 +363,7 @@ int send_influxdb(
             /* check current buf_len + new_line_len >= maximum length:  send! */
             if (buf && (buf_len + line_len >= max_udp_message_len)) {
 
-                int orig_len = buf_len;
+                apr_size_t orig_len = (unsigned int)buf_len;
                 buf_len = strnlen(buf, max_udp_message_len);
 
                 /* append newline if needed */
@@ -381,7 +392,7 @@ int send_influxdb(
 
         if (lines) {
             // emit final (perhaps only) UDP packet for this batch of metrics!
-            int orig_len = buf_len;
+            unsigned long int orig_len = (unsigned long int )buf_len;
             buf_len = strnlen(buf, max_udp_message_len);
 
             /* append newline if needed */
