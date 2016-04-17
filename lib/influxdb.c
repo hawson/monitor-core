@@ -137,6 +137,7 @@ create_influxdb_metric(
     apr_pool_t *pool,
     const char *name,
     const char *value,
+    const char *measurement,
     influxdb_types type,
     unsigned long int timestamp) {
 
@@ -145,6 +146,7 @@ create_influxdb_metric(
     
 
     metric->name        = apr_pstrdup(pool, name);
+    metric->measurement = apr_pstrdup(pool, measurement);
     metric->value       = apr_pstrdup(pool, value);
     metric->timestamp   = timestamp ? timestamp : (unsigned long int)apr_time_now()*1000;
     metric->type        = type ? type : guess_type(value);
@@ -272,9 +274,10 @@ int send_influxdb(
 
             metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
 
-            debug_msg("  metric[%d]: meas=%s value=%s ts=%lu hostname=%s tags=%s", 
+            debug_msg("  metric[%d]: name=%s meas=%s value=%s ts=%lu hostname=%s tags=%s", 
                         m, 
                         metric->name,
+                        metric->measurement,
                         metric->value,
                         metric->timestamp,
                         hostname,

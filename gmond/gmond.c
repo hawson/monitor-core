@@ -220,6 +220,7 @@ struct Ganglia_collection_group {
   int once;
   int collect_every;
   int time_threshold;
+  char * measurement;
   apr_array_header_t *metric_array;
 };
 typedef struct Ganglia_collection_group Ganglia_collection_group;
@@ -2628,6 +2629,7 @@ setup_collection_groups( void )
       group->once = cfg_getbool( group_conf, "collect_once");
       group->collect_every = cfg_getint( group_conf, "collect_every");
       group->time_threshold = cfg_getint( group_conf, "time_threshold");
+      group->measurement = cfg_getstr( group_conf, "measurement");
 
       if(group->once)
         {
@@ -3080,7 +3082,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
             /* create a new metric obbject from the main metric structure */
             //metric = apr_palloc(influxdb_pool, sizeof(influxdb_metric_t));
-            metric = create_influxdb_metric(influxdb_pool, cb->name, host_metric_value(cb->info, &(cb->msg)), INT, 0);
+            metric = create_influxdb_metric(influxdb_pool, cb->name, host_metric_value(cb->info, &(cb->msg)), group->measurement, INT, 0);
 
             dump_metric(metric);
 

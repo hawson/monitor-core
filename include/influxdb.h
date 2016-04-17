@@ -75,6 +75,7 @@ influxdb_metric_t * create_influxdb_metric(
     apr_pool_t *pool,
     const char *name,
     const char *value,
+    const char *measurement,
     enum influxdb_types type,
     unsigned long int timestamp) ;
 
