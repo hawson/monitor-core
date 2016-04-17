@@ -321,14 +321,14 @@ int send_influxdb(
 
             metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
 
-            debug_msg("  metric[%d]: name=%s meas=%s value=%s ts=%lu hostname=%s tags=%s", 
-                        m, 
-                        metric->name,
-                        metric->measurement,
+            debug_msg("  metric[%d]: name=%s meas=%s value=%s ts=%lu hostname=%s tags=%s",
+                        m,
+                        influxdb_escape_string(pool, metric->name),
+                        influxdb_escape_string(pool, metric->measurement),
                         metric->value,
                         metric->timestamp,
-                        hostname,
-                        channel->default_tags
+                        influxdb_escape_string(pool, hostname), /* incase "hostname" is really a service or non-host-like object */
+                        channel->default_tags /* this is not escaped here, as it is assumed the user has alread handled this in the .conf file. Ha. */
                         ) ;
 
             line = build_influxdb_line(channel_pool, metric, hostname, channel->default_tags);
