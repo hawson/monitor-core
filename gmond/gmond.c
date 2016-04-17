@@ -3076,7 +3076,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         /* If there are influxdb channels, process them */
         if (influxdb_send_channels && (i<INFLUXDB_MAX_MSGS)) {
             int influxdb_errors = 0;
-
+            char *value = NULL;
             influxdb_metric_t * metric = NULL;
 
             debug_msg("  Processing influxdb line(%d)", i);
@@ -3084,15 +3084,18 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
             /* create a new metric obbject from the main metric structure */
             //metric = apr_palloc(influxdb_pool, sizeof(influxdb_metric_t));
+
+            value = host_metric_value(cb->info, &(cb->msg)),
             metric = create_influxdb_metric(
                     influxdb_pool,
                     cb->name,
-                    host_metric_value(cb->info, &(cb->msg)),
+                    value,
                     influxdb_escape_string(influxdb_pool, group->measurement), //make sure it's escaped here...
-                    INT,
+                    guess_type(value),
                     influxdb_timestamp);
 
-            dump_metric(metric);
+            if (debug_level)
+                dump_metric(metric);
 
             /* Add string to the list */
             influxdb_msgs[i] = build_influxdb_line(influxdb_pool, metric, myname, NULL);
