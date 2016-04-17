@@ -2926,7 +2926,6 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
     /* InfluxDB memory structures */
     apr_pool_t *influxdb_pool = NULL;
-    char *influxdb_msgs[INFLUXDB_MAX_MSGS]; // no more than this many msgs at a time. :-(
     apr_array_header_t * influxdb_metrics_list = NULL;
     unsigned long int influxdb_timestamp = 0;
 
@@ -2935,7 +2934,6 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
     if (influxdb_send_channels) {
         apr_pool_create(&influxdb_pool, global_context);
         influxdb_metrics_list = apr_array_make(influxdb_pool, num_elts, sizeof(influxdb_metric_t *));
-        memset(influxdb_msgs, 0, sizeof (char *)*INFLUXDB_MAX_MSGS);
         influxdb_timestamp = (unsigned long int) apr_time_now() * 1000;
     }
 
@@ -3096,10 +3094,6 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
             if (debug_level)
                 dump_metric(metric);
-
-            /* Add string to the list */
-            influxdb_msgs[i] = build_influxdb_line(influxdb_pool, metric, myname, NULL);
-            debug_msg("\tinfluxdb line: %s", influxdb_msgs[i]);
 
             /* Add metric to the list, processed later by send_influxdb() */
             APR_ARRAY_PUSH(influxdb_metrics_list, influxdb_metric_t*) = metric;
