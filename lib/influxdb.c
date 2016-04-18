@@ -417,8 +417,6 @@ void send_influxdb(
 
     }
 
-
-    return num_errors;
 }
 
 /* EOF */

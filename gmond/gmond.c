@@ -3090,21 +3090,24 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
             /* create a new metric obbject from the main metric structure */
             //metric = apr_palloc(influxdb_pool, sizeof(influxdb_metric_t));
 
-            value = host_metric_value(cb->info, &(cb->msg)),
+            value = host_metric_value(cb->info, &(cb->msg));
             metric = create_influxdb_metric(
-                    influxdb_pool,
-                    cb->name,
-                    value,
-                    influxdb_escape_string(influxdb_pool, group->measurement), //make sure it's escaped here...
-                    guess_type(value),
-                    influxdb_timestamp);
+                influxdb_pool,
+                cb->name,
+                value,
+                influxdb_escape_string(influxdb_pool, group->measurement), //make sure it's escaped here...
+                guess_type(value),
+                influxdb_timestamp
+            );
 
-            if (debug_level)
-                dump_metric(metric);
+            if (metric) {
+                if (debug_level>2)
+                    dump_metric(metric);
 
-            /* Add metric to the list, processed later by send_influxdb() */
-            APR_ARRAY_PUSH(influxdb_metrics_list, influxdb_metric_t*) = metric;
-            //*(influxdb_metric_t*)apr_array_push(influxdb_metrics_list) = *metric;
+                /* Add metric to the list, processed later by send_influxdb() */
+                APR_ARRAY_PUSH(influxdb_metrics_list, influxdb_metric_t*) = metric;
+                //*(influxdb_metric_t*)apr_array_push(influxdb_metrics_list) = *metric;
+            }
 
         }
 
