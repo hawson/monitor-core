@@ -91,10 +91,15 @@ char * build_influxdb_line( apr_pool_t *pool, influxdb_metric_t *metric, const c
 influxdb_types guess_type(const char* string);
 
 
+/* escape strings according to influxdb rules.  Namely, spaces and commas
+ * must be escaped */
+char * influxdb_escape_string(apr_pool_t *pool, const char* str);
+
+
 /* dumps a metric struct */
 void dump_metric(const influxdb_metric_t *metric);
 
 /* send metrics to influxdb channels */
-int send_influxdb ( apr_pool_t *pool, const apr_array_header_t *influxdb_channels, const apr_array_header_t *metrics, const char *hostname, int max_udp_message_len );
+void send_influxdb ( apr_pool_t *pool, const apr_array_header_t *influxdb_channels, const apr_array_header_t *metrics, const char *hostname, int max_udp_message_len );
 
 #endif
