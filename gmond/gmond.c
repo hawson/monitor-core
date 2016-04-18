@@ -2933,8 +2933,15 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
     /* initial influxdb pool/bookkeeping */
     if (influxdb_send_channels) {
         apr_pool_create(&influxdb_pool, global_context);
+        if (!influxdb_pool)
+            err_quit("Failed to make influxdb_pool");
+
         influxdb_metrics_list = apr_array_make(influxdb_pool, num_elts, sizeof(influxdb_metric_t *));
+        if (!influxdb_metrics_list)
+            err_quit("Failed to make influxdb_metrics_list");
+
         influxdb_timestamp = (unsigned long int) apr_time_now() * 1000;
+        debug_msg("  sending influxdb...");
     }
 
     /* This group needs to be sent */
@@ -3077,7 +3084,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
             char *value = NULL;
             influxdb_metric_t * metric = NULL;
 
-            debug_msg("  Processing influxdb line(%d)", i);
+            debug_msg("\nProcessing influxdb group(%d)", i);
 
 
             /* create a new metric obbject from the main metric structure */
@@ -3116,6 +3123,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         send_influxdb(influxdb_pool, (apr_array_header_t *)influxdb_send_channels, influxdb_metrics_list, myname, max_udp_message_len);
         /* clear up our influxdb allocations */
         apr_pool_destroy(influxdb_pool);
+        debug_msg("Done with influxdb line(%d)\n-----", i);
     }
 
 

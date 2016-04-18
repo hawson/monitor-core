@@ -102,6 +102,8 @@ influxdb_types guess_type(const char* string) {
     char * endptr;
     long int value;
 
+    int debug_level = get_debug_msg_level();
+
     errno = 0;
 
     value = strtol(string, &endptr, base);
@@ -111,7 +113,8 @@ influxdb_types guess_type(const char* string) {
         ||(errno != 0 && value == 0)) {
         perror("strtol");
 
-        debug_msg("\tGT:guess error: %s, returning STR", string);
+        if (debug_level > 2)
+            debug_msg("\tGT:guess error: %s, returning STR", string);
 
         return STR;
     }
@@ -128,19 +131,23 @@ influxdb_types guess_type(const char* string) {
             return BOOL;
         }
 
-        debug_msg("\tGT:no digits, not bool: %s, returning STR", string);
+        if (debug_level > 2)
+            debug_msg("\tGT:no digits, not bool: %s, returning STR", string);
         return STR;
     }
 
     if (*endptr != '\0') {
-        debug_msg("\tGT:stuff left over: %s, returning FLOAT", string);
+        if (debug_level > 2)
+            debug_msg("\tGT:stuff left over: %s, returning FLOAT", string);
         return FLOAT;
     } else {
-        debug_msg("\tGT:Looks good! %s, returning INT", string);
+        if (debug_level > 2)
+            debug_msg("\tGT:Looks like integer! %s, returning INT", string);
         return INT;
     }
 
-    debug_msg("\tGT:No clue: %s, returning UNDEF", string);
+    if (debug_level > 2)
+        debug_msg("\tGT:No clue: %s, returning UNDEF", string);
     return UNDEF;
 
 }
@@ -232,13 +239,13 @@ void dump_metric(const influxdb_metric_t *metric) {
     if (!metric)
         return;
 
-    debug_msg("   ---metric=%s", metric->name);
-    debug_msg("      value=%s", metric->value);
-    debug_msg("      type=%s", INT   == type ? "INT" :
+    debug_msg("    metric=%-10s type=%s", metric->name, 
+                              (INT   == type ? "INT" :
                                FLOAT == type ? "FLOAT" :
-                               STR   == type ? "STR" : "UNDEF" );
-    debug_msg("      ts=%lu", metric->timestamp);
+                               STR   == type ? "STR" : "UNDEF" )); 
+    debug_msg("     value=%-10s   ts=%lu", metric->value, metric->timestamp);
 }
+
 
 apr_status_t influxdb_emit_udp(
     apr_socket_t *socket,
@@ -250,17 +257,17 @@ apr_status_t influxdb_emit_udp(
         char error[128] = "";
         char *rv;
         rv = apr_strerror(status, error, sizeof(error));
-        debug_msg("  Send error (%s) %u: %s", rv, status, error);
+        debug_msg("  influxdb send error (%s) %u: %s", rv, status, error);
     }
 
     return status;
 
 }
 
-//take string in src, and escape all "chr" characters with
-//the "escape" character.
-//THE CALLING FUNCTION MUST ENSURE THAT dest IS BIG ENOUGH!!!!
-//returns non-zero on error.
+/* take string in src, and escape characters listed in switch() block
+ * THE CALLING FUNCTION MUST ENSURE THAT dest IS BIG ENOUGH!!!!
+ * returns non-zero on error.
+ */
 int influxdb_escape(char* dest, const char* src, unsigned int maxlen) {
     int rc = 0;
     int i=0;
@@ -285,6 +292,7 @@ int influxdb_escape(char* dest, const char* src, unsigned int maxlen) {
     return rc;
 }
 
+
 char * influxdb_escape_string(apr_pool_t *pool, const char* str) {
     char *newstr = NULL;
     int strlen = 0;
@@ -303,7 +311,7 @@ char * influxdb_escape_string(apr_pool_t *pool, const char* str) {
     return newstr;
 }
 
-int send_influxdb(
+void send_influxdb(
     apr_pool_t *pool,
     const apr_array_header_t *influxdb_channels,
     const apr_array_header_t *metrics,
@@ -311,9 +319,7 @@ int send_influxdb(
     int max_udp_message_len
     ) {
 
-    apr_status_t status;
     int debug_level = get_debug_msg_level();
-    int num_errors = 0;
     int i;
 
     for (i=0; i < influxdb_channels->nelts; i++) {
@@ -325,6 +331,8 @@ int send_influxdb(
         apr_pool_t *channel_pool;
         apr_status_t status;
 
+        debug_msg("  Sending to influxdb channel %d", i);
+
         status = apr_pool_create(&channel_pool, pool);
         if (status) {
             err_quit("Failed to create influxdb channel pool! (%d) at %s:%d", status, __FILE__,__LINE__);
@@ -333,7 +341,7 @@ int send_influxdb(
         channel = APR_ARRAY_IDX(influxdb_channels, i, influxdb_send_channel*);
 
         if (debug_level ) {
-            debug_msg("send_influxdb def_tags: %s", channel->default_tags);
+            debug_msg("  default channel tags: %s", channel->default_tags);
         }
 
         debug_msg("  starting metric loop");
@@ -344,7 +352,7 @@ int send_influxdb(
 
             metric = APR_ARRAY_IDX(metrics,m, influxdb_metric_t*);
 
-            debug_msg("  metric[%d]: name=%s meas=%s value=%s ts=%lu hostname=%s tags=%s",
+            debug_msg("    metric[%d]: name=%s meas=%s value=%s ts=%lu hostname=%s tags=%s",
                 m,
                 influxdb_escape_string(pool, metric->name),
                 influxdb_escape_string(pool, metric->measurement),
@@ -356,7 +364,9 @@ int send_influxdb(
 
             line = build_influxdb_line(channel_pool, metric, hostname, channel->default_tags);
             line_len = strnlen(line, max_udp_message_len);
-            debug_msg("    (%d)->%s", line_len, line);
+
+            if (debug_level > 2)
+                debug_msg("    (%d)->%s", line_len, line);
 
             /* check current buf_len + new_line_len >= maximum length:  send! */
             if (buf && (buf_len + line_len >= max_udp_message_len)) {
@@ -370,7 +380,7 @@ int send_influxdb(
                 }
 
                 status = influxdb_emit_udp(channel->socket, buf, &buf_len);
-                debug_msg("##0C(%lu,%lu,%d) %s", buf_len, orig_len, status, buf);
+                debug_msg("    Send frag: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
                 lines = 0;
                 buf = NULL;
             }
@@ -399,9 +409,8 @@ int send_influxdb(
             }
 
             status = influxdb_emit_udp(channel->socket, buf, &buf_len);
-            debug_msg("##1C(%lu,%lu,%d) %s", buf_len, orig_len, status, buf);
             lines = 0;
-            buf = NULL;
+            debug_msg("    Send final: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
         }
         apr_pool_destroy(channel_pool);
 
