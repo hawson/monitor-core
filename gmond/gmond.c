@@ -2990,8 +2990,9 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
          *  metadata_last_set field will be 0.  No need to send the full data 
          *  with every value update.
          */
-        if (!cb->metadata_last_sent || (send_metadata_interval && 
-           (cb->metadata_last_sent < (now - apr_time_make(send_metadata_interval,0))))) 
+        if (udp_send_channels  &&
+            (!cb->metadata_last_sent    // send metadata at all?
+            || (send_metadata_interval && (cb->metadata_last_sent < (now - apr_time_make(send_metadata_interval,0))))))
           {
             Ganglia_metric gmetric = Ganglia_metric_create((Ganglia_pool)global_context);
             char *name, *val, *type;
