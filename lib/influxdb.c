@@ -96,7 +96,9 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
 
 /* Given a string, try to guess the type:  INT, FLOAT, STRING */
-influxdb_types guess_type(const char* string) {
+influxdb_types guess_type(
+    const char* string
+    ) {
 
     unsigned int base = 10;
     char * endptr;
@@ -268,7 +270,12 @@ apr_status_t influxdb_emit_udp(
  * THE CALLING FUNCTION MUST ENSURE THAT dest IS BIG ENOUGH!!!!
  * returns non-zero on error.
  */
-int influxdb_escape(char* dest, const char* src, unsigned int maxlen) {
+int influxdb_escape(
+    char* dest, 
+    const char* src, 
+    unsigned int maxlen
+    ) {
+
     int rc = 0;
     int i=0;
     //char* pos = NULL;
@@ -293,7 +300,10 @@ int influxdb_escape(char* dest, const char* src, unsigned int maxlen) {
 }
 
 
-char * influxdb_escape_string(apr_pool_t *pool, const char* str) {
+char * influxdb_escape_string(
+    apr_pool_t *pool,
+    const char* str
+    ) {
     char *newstr = NULL;
     int strlen = 0;
 
