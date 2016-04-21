@@ -18,9 +18,24 @@
 #include "apr_net.h"
 #include <apr_network_io.h>
 #include <apr_lib.h>
+#include <sys/types.h>
+#include <regex.h>
 
 
 //typedef struct influxdb_send_channel* influxdb_send_channel;
+
+//Need only compile these once.
+//BOOL is the last value of the enum in influxdb.h
+#define MAX_MATCHES 1
+regex_t re_compiled[BOOL];
+static const char* regexes[] = {
+    ".*",
+    "^[-+]?[0-9]+$",                //INT
+    "^[-+]?([0-9]*)\\.([0-9]+)$",   //FLOAT
+    ".*",                           //STR
+    "^([tT](rue)?|[fF](alse)?|TRUE|FALSE))$",  //BOOL
+};
+
 
 /* Send create InfluxDB send channels */
 Ganglia_influxdb_send_channels
@@ -95,6 +110,27 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 }
 
 
+/* Compile the regexes once, since they never change */
+void re_init(regex_t* compiled, const char** regexes) {
+
+    char * re_err[1024];
+    int i, rv;
+
+    for (i=0; i<=BOOL; i++) {
+        rv = regcomp(&re_compiled[i], regexes[i], REG_EXTENDED | REG_NOSUB );
+        regerror(rv, &re_compiled[BOOL], re_err, 1024);
+        debug_msg("%s", re_err);
+        if (rv) {
+            err_quit("Failed compiling regex: %s", regexes[i]);            
+        } else {
+            debug_msg("Intialized regex: /%s/", regexes[i]);
+        }
+    }
+
+}
+
+
+
 /* Given a string, try to guess the type:  INT, FLOAT, STRING */
 influxdb_types guess_type(
     const char* string
@@ -106,7 +142,55 @@ influxdb_types guess_type(
 
     int debug_level = get_debug_msg_level();
 
+    static int re_initialized = 0;
+
+    int re_rc;
+    char * re_err[1024];
+    int rc;
+
     errno = 0;
+
+    if (!string)
+        return UNDEF;
+
+    if (!re_initialized) {
+        memset(re_compiled, 0, sizeof(regex_t) * BOOL);
+        re_init(re_compiled, regexes);
+        re_initialized = 1;
+    }
+
+    debug_msg("    Testing [%s] against /%s/", string, regexes[BOOL]);
+    rc = regexec(&re_compiled[BOOL], string, 0, NULL, 0);
+    if (0 == rc) {
+        debug_msg("     GT: %s -> BOOL", string);
+        return BOOL;
+    } else if (REG_NOMATCH != rc) {
+        regerror(rc, &re_compiled[BOOL], re_err, 1024);
+        debug_msg("%s", re_err);
+    }
+
+    debug_msg("    Testing [%s] against /%s/", string, regexes[FLOAT]);
+    rc = regexec(&re_compiled[FLOAT], string, 0, NULL, 0);
+    if (0 == rc) {
+        debug_msg("     GT: %s -> FLOAT", string);
+        return FLOAT;
+    } else if (REG_NOMATCH != rc) {
+        regerror(rc, &re_compiled[FLOAT], re_err, 1024);
+        debug_msg("%s", re_err);
+    }
+
+    debug_msg("    Testing [%s] against /%s/", string, regexes[INT]);
+    rc = regexec(&re_compiled[INT], string, 0, NULL, 0);
+    if (0 == rc) {
+        debug_msg("     GT: %s -> INT", string);
+        return INT;
+    } else if (REG_NOMATCH != rc) {
+        regerror(rc, &re_compiled[INT], re_err, 1024);
+        debug_msg("%s", re_err);
+    } 
+
+    return STR;
+
 
     value = strtol(string, &endptr, base);
 
