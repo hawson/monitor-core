@@ -65,6 +65,9 @@
 /* The key in the apr_socket_t struct where our gzipped data is stored */
 #define GZIP_KEY "gzip"
 
+/* Wait this long during the main gmond loop */
+#define MAIN_LOOP_DELAY 60
+
 /* When this gmond was started */
 apr_time_t started;
 /* My name */
@@ -3539,7 +3542,7 @@ main ( int argc, char *argv[] )
       if(!deaf)
         {
           /* if we went deaf, re-subscribe to the multicast channel */
-          if ((now - udp_last_heard) > 60 * APR_USEC_PER_SEC)
+          if ((now - udp_last_heard) > MAIN_LOOP_DELAY * APR_USEC_PER_SEC)
             {
               /* FIXME: maybe this should be done for the affected
                         channel only? */
@@ -3565,7 +3568,8 @@ main ( int argc, char *argv[] )
       else
         {
           /* we're mute. nothing to collect and send. */
-          next_collection = now + 60 * APR_USEC_PER_SEC;
+          debug_msg("We are mute...");
+          next_collection = now + MAIN_LOOP_DELAY * APR_USEC_PER_SEC;
         }
     }
 
