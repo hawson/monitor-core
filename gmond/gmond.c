@@ -3115,6 +3115,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         if(!errors)
           {
             /* If the message send ok. Schedule the next time threshold. */
+            debug_msg("Setting collect delta = %lu", group->next_send * APR_USEC_PER_SEC);
             group->next_send = now + (group->time_threshold * APR_USEC_PER_SEC);
           }
         else
@@ -3141,10 +3142,13 @@ process_collection_groups( apr_time_t now )
   int i;
   apr_time_t next = 0;
 
+  debug_msg("group_-------");
+
   /* Run through each collection group and collect any data that needs collecting... */
   for(i=0; i< collection_groups->nelts; i++)
     {
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
+      debug_msg("group_coll %d: s=%lu c=%lu n=%lu now=%lu", i, group->next_send, group->next_collect, next);
       if(group->next_collect <= now)
         {
           Ganglia_collection_group_collect(group, now);
@@ -3155,6 +3159,7 @@ process_collection_groups( apr_time_t now )
   for(i=0; i< collection_groups->nelts; i++)
     {
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
+      debug_msg("group_send %d: s=%lu c=%lu n=%lu now=%lu", i, group->next_send, group->next_collect, next);
       if( group->next_send <= now )
         {
           Ganglia_collection_group_send(group, now);
@@ -3167,6 +3172,7 @@ process_collection_groups( apr_time_t now )
       apr_time_t min;
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
       min = group->next_send < group->next_collect? group->next_send : group->next_collect;
+      debug_msg("group_next %d: s=%lu c=%lu n=%lu now=%lu", i, group->next_send, group->next_collect, next);
       if(!next)
         {
           next = min;
@@ -3510,7 +3516,11 @@ main ( int argc, char *argv[] )
       /* Make sure we never wait for negative seconds (shouldn't happen) */
       apr_interval_time_t wait = next_collection >= now ? next_collection - now : 1;
 
-      if (udp_listen_channels != NULL)
+      debug_msg("Now: %lu  Wait: %lu\n", (long int)now, (long int)wait/APR_USEC_PER_SEC);
+
+      /* If we have a listen channel, block on polling them for "wait" microseconds
+       * Otherwise, sleep for "wait" microseconds instead */
+      if (udp_listen_channels)
         {
           /* Pull in incoming data */
           poll_udp_listen_channels(wait, now);
@@ -3549,6 +3559,7 @@ main ( int argc, char *argv[] )
       if(!mute)
         {
           /* collect data from collection_groups */
+          debug_msg("Not mute, procesing C-groups...");
           next_collection = process_collection_groups( now );
         }
       else
