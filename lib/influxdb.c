@@ -159,7 +159,8 @@ influxdb_types guess_type(
         re_initialized = 1;
     }
 
-    debug_msg("    Testing [%s] against /%s/", string, regexes[BOOL]);
+    if (debug_level > 2)
+        debug_msg("    Testing [%s] against /%s/", string, regexes[BOOL]);
     rc = regexec(&re_compiled[BOOL], string, 0, NULL, 0);
     if (0 == rc) {
         debug_msg("     GT: %s -> BOOL", string);
@@ -169,7 +170,8 @@ influxdb_types guess_type(
         debug_msg("%s", re_err);
     }
 
-    debug_msg("    Testing [%s] against /%s/", string, regexes[FLOAT]);
+    if (debug_level > 2)
+        debug_msg("    Testing [%s] against /%s/", string, regexes[FLOAT]);
     rc = regexec(&re_compiled[FLOAT], string, 0, NULL, 0);
     if (0 == rc) {
         debug_msg("     GT: %s -> FLOAT", string);
@@ -179,7 +181,8 @@ influxdb_types guess_type(
         debug_msg("%s", re_err);
     }
 
-    debug_msg("    Testing [%s] against /%s/", string, regexes[INT]);
+    if (debug_level > 2)
+        debug_msg("    Testing [%s] against /%s/", string, regexes[INT]);
     rc = regexec(&re_compiled[INT], string, 0, NULL, 0);
     if (0 == rc) {
         debug_msg("     GT: %s -> INT", string);
@@ -191,50 +194,6 @@ influxdb_types guess_type(
 
     return STR;
 
-
-    value = strtol(string, &endptr, base);
-
-    // if there's an error here, it's probably a string...
-    if (  (errno == ERANGE && (value == LONG_MAX || value == LONG_MIN))
-        ||(errno != 0 && value == 0)) {
-        perror("strtol");
-
-        if (debug_level > 2)
-            debug_msg("\tGT:guess error: %s, returning STR", string);
-
-        return STR;
-    }
-
-    // no digits found.  Possibly a boolean or string
-    if (endptr == string) {
-
-        if (!strcmp("t", string) || !strcmp("f", string) ||
-            !strcmp("T", string) || !strcmp("F", string) ||
-            !strcmp("true", string) || !strcmp("false", string) ||
-            !strcmp("True", string) || !strcmp("False", string) ||
-            !strcmp("TRUE", string) || !strcmp("FALSE", string)) {
-            debug_msg("\tGT:no digits, looks like a bool: %s, returning STR", string);
-            return BOOL;
-        }
-
-        if (debug_level > 2)
-            debug_msg("\tGT:no digits, not bool: %s, returning STR", string);
-        return STR;
-    }
-
-    if (*endptr != '\0') {
-        if (debug_level > 2)
-            debug_msg("\tGT:stuff left over: %s, returning FLOAT", string);
-        return FLOAT;
-    } else {
-        if (debug_level > 2)
-            debug_msg("\tGT:Looks like integer! %s, returning INT", string);
-        return INT;
-    }
-
-    if (debug_level > 2)
-        debug_msg("\tGT:No clue: %s, returning UNDEF", string);
-    return UNDEF;
 
 }
 
