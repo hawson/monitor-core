@@ -113,7 +113,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 /* Compile the regexes once, since they never change */
 void re_init(regex_t* compiled, const char** regexes) {
 
-    char * re_err[1024];
+    char re_err[1024];
     int i, rv;
 
     for (i=0; i<=BOOL; i++) {
@@ -145,7 +145,7 @@ influxdb_types guess_type(
     static int re_initialized = 0;
 
     int re_rc;
-    char * re_err[1024];
+    char re_err[1024];
     int rc;
 
     errno = 0;
