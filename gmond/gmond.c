@@ -3151,7 +3151,7 @@ process_collection_groups( apr_time_t now )
   for(i=0; i< collection_groups->nelts; i++)
     {
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
-      debug_msg("group_coll %d: s=%lu c=%lu n=%lu now=%lu", i, group->next_send, group->next_collect, next);
+      debug_msg("group_coll %d: send=%lu coll=%lu next=%lu now=%lu", i, group->next_send, group->next_collect, next, now);
       if(group->next_collect <= now)
         {
           Ganglia_collection_group_collect(group, now);
@@ -3162,7 +3162,7 @@ process_collection_groups( apr_time_t now )
   for(i=0; i< collection_groups->nelts; i++)
     {
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
-      debug_msg("group_send %d: s=%lu c=%lu n=%lu now=%lu", i, group->next_send, group->next_collect, next);
+      debug_msg("group_send %d: send=%lu coll=%lu next=%lu now=%lu", i, group->next_send, group->next_collect, next, now);
       if( group->next_send <= now )
         {
           Ganglia_collection_group_send(group, now);
@@ -3175,18 +3175,10 @@ process_collection_groups( apr_time_t now )
       apr_time_t min;
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
       min = group->next_send < group->next_collect? group->next_send : group->next_collect;
-      debug_msg("group_next %d: s=%lu c=%lu n=%lu now=%lu", i, group->next_send, group->next_collect, next);
-      if(!next)
-        {
-          next = min;
-        }
-      else
-        {
-          if(min < next)
-            {
-              next = min;
-            }
-        }
+      debug_msg("group_next %d: send=%lu coll=%lu next=%lu now=%lu min=%ld", i, group->next_send, group->next_collect, next, now, min);
+      if(!next || (min < next)) {
+        next = min;
+      }
     }
 
   /* make sure we don't schedule for the past */
