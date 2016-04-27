@@ -2931,6 +2931,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
     apr_pool_t *influxdb_pool = NULL;
     apr_array_header_t * influxdb_metrics_list = NULL;
     unsigned long int influxdb_timestamp = 0;
+    int influxdb_errors = 0;
 
 
     /* initial influxdb pool/bookkeeping */
@@ -3084,9 +3085,9 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
 
         /* If there are influxdb channels, process them */
         if (influxdb_send_channels && (i<INFLUXDB_MAX_MSGS)) {
-            int influxdb_errors = 0;
             char *value = NULL;
             influxdb_metric_t * metric = NULL;
+            influxdb_errors = 0;
 
             debug_msg("\nProcessing influxdb group(%d)", i);
 
@@ -3111,11 +3112,13 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
                 /* Add metric to the list, processed later by send_influxdb() */
                 APR_ARRAY_PUSH(influxdb_metrics_list, influxdb_metric_t*) = metric;
                 //*(influxdb_metric_t*)apr_array_push(influxdb_metrics_list) = *metric;
+            } else {
+                influxdb_errors += 1;
             }
 
         }
 
-        if(!errors)
+        if(!errors || (influxdb_send_channels && !influxdb_errors))
           {
             /* If the message send ok. Schedule the next time threshold. */
             debug_msg("Setting collect delta = %lu", group->next_send * APR_USEC_PER_SEC);
