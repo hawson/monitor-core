@@ -48,13 +48,13 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 
     cfg_t *cfg = (cfg_t *) config;
 
-    int num_influxdb_send_channels = cfg_size ( cfg, "influxdb_send_channel");
+    int num_influxdb_send_channels = (int)cfg_size ( cfg, "influxdb_send_channel");
 
     debug_msg("Found %d influxdb_send_channel stanzas", num_influxdb_send_channels);
 
     //No channels?  We're done here.
     if (num_influxdb_send_channels <= 0) {
-        return (Ganglia_influxdb_send_channels)send_channels;
+        return NULL;
     }
 
     send_channels = apr_array_make(context,
@@ -77,7 +77,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         port         = cfg_getint(influxdb_cfg, "port");
         default_tags = cfg_getstr(influxdb_cfg, "default_tags");
 
-        if (!host)
+        if (NULL == host)
             err_quit("Invalid or missing influxdb_send_channel->host attribute");
         if (!port)
             err_quit("Invalid or missing influxdb_send_channel->port attribute");
@@ -94,7 +94,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
                   port,
                   channel->default_tags ? channel->default_tags : "NULL");
 
-        channel->socket = create_udp_client(context, host, port, NULL, NULL, 0);
+        channel->socket = create_udp_client(context, host, (apr_port_t)port, NULL, NULL, 0);
 
         if (!channel->socket) {
             err_msg("Unable to create UDP client for %s:%lu. No route to IP? Exiting.", host, port);
@@ -114,12 +114,13 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 void re_init(regex_t* compiled, const char** regexes) {
 
     char re_err[MAX_RE_LENGTH];
-    int i, rv, err_size;
+    int i, rv; 
+    size_t err_size;
 
     for (i=0; i<=BOOL; i++) {
-        rv = regcomp(&re_compiled[i], regexes[i], REG_EXTENDED | REG_NOSUB );
-        err_size = regerror(rv, &re_compiled[BOOL], re_err, MAX_RE_LENGTH);
-        debug_msg("%s", re_err);
+        rv = regcomp(&compiled[i], regexes[i], REG_EXTENDED | REG_NOSUB );
+        err_size = regerror(rv, &compiled[BOOL], re_err, MAX_RE_LENGTH);
+        debug_msg("(%d)%s", (int)err_size, re_err);
         if (rv) {
             err_quit("Failed compiling regex: %s", regexes[i]);            
         } else {
@@ -135,10 +136,6 @@ void re_init(regex_t* compiled, const char** regexes) {
 influxdb_types guess_type(
     const char* string
     ) {
-
-    unsigned int base = 10;
-    char * endptr;
-    long int value;
 
     int debug_level = get_debug_msg_level();
 
@@ -319,7 +316,7 @@ int influxdb_escape(
     ) {
 
     int rc = 0;
-    int i=0;
+    unsigned int i=0;
     //char* pos = NULL;
 
     if (!src)
