@@ -113,12 +113,12 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 /* Compile the regexes once, since they never change */
 void re_init(regex_t* compiled, const char** regexes) {
 
-    char re_err[1024];
-    int i, rv;
+    char re_err[MAX_RE_LENGTH];
+    int i, rv, err_size;
 
     for (i=0; i<=BOOL; i++) {
         rv = regcomp(&re_compiled[i], regexes[i], REG_EXTENDED | REG_NOSUB );
-        regerror(rv, &re_compiled[BOOL], re_err, 1024);
+        err_size = regerror(rv, &re_compiled[BOOL], re_err, MAX_RE_LENGTH);
         debug_msg("%s", re_err);
         if (rv) {
             err_quit("Failed compiling regex: %s", regexes[i]);            
@@ -144,8 +144,7 @@ influxdb_types guess_type(
 
     static int re_initialized = 0;
 
-    int re_rc;
-    char re_err[1024];
+    char re_err[MAX_RE_LENGTH];
     int rc;
 
     errno = 0;
@@ -166,7 +165,7 @@ influxdb_types guess_type(
         debug_msg("     GT: %s -> BOOL", string);
         return BOOL;
     } else if (REG_NOMATCH != rc) {
-        regerror(rc, &re_compiled[BOOL], re_err, 1024);
+        regerror(rc, &re_compiled[BOOL], re_err, MAX_RE_LENGTH);
         debug_msg("%s", re_err);
     }
 
@@ -177,7 +176,7 @@ influxdb_types guess_type(
         debug_msg("     GT: %s -> FLOAT", string);
         return FLOAT;
     } else if (REG_NOMATCH != rc) {
-        regerror(rc, &re_compiled[FLOAT], re_err, 1024);
+        regerror(rc, &re_compiled[FLOAT], re_err, MAX_RE_LENGTH);
         debug_msg("%s", re_err);
     }
 
@@ -188,7 +187,7 @@ influxdb_types guess_type(
         debug_msg("     GT: %s -> INT", string);
         return INT;
     } else if (REG_NOMATCH != rc) {
-        regerror(rc, &re_compiled[INT], re_err, 1024);
+        regerror(rc, &re_compiled[INT], re_err, MAX_RE_LENGTH);
         debug_msg("%s", re_err);
     } 
 

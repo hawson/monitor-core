@@ -25,6 +25,9 @@
 /* max size of defualt tags */
 #define MAX_DEF_TAG_LENGTH 1024
 
+/* max size of various regex strings */
+#define MAX_RE_LENGTH 1024
+
 /* typedefs, etc */
 
 typedef struct {
