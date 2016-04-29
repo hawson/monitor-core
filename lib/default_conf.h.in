@@ -83,6 +83,13 @@ tcp_accept_channel {\n\
   gzip_output = no\n\
 }\n\
 \n\
+/* Uncomment to send data to InfluxDB database */\n\
+#influxdb_send_channel {\n\
+#    host = \"127.0.0.1\"\n\
+#    port = 8089\n\
+#    default_tags = \"tag=foo,zone=us-east\"\n\
+#}\n\
+\n\
 "
 
 #define SFLOW_CONFIGURATION "\
@@ -155,6 +162,7 @@ modules {\n\
 collection_group {\n\
   collect_once = yes\n\
   time_threshold = 20\n\
+  measurement = \"heartbeat\"\n\
   metric {\n\
     name = \"heartbeat\"\n\
   }\n\
@@ -162,24 +170,9 @@ collection_group {\n\
 \n\
 /* This collection group will send general info about this host*/\n\
 collection_group {\n\
-  collect_every = 60\n\
+  collect_once = yes\n\
   time_threshold = 60\n\
-  metric {\n\
-    name = \"cpu_num\"\n\
-    title = \"CPU Count\"\n\
-  }\n\
-  metric {\n\
-    name = \"cpu_speed\"\n\
-    title = \"CPU Speed\"\n\
-  }\n\
-  metric {\n\
-    name = \"mem_total\"\n\
-    title = \"Memory Total\"\n\
-  }\n\
-  metric {\n\
-    name = \"swap_total\"\n\
-    title = \"Swap Space Total\"\n\
-  }\n\
+  measurement = \"meta\"\n\
   metric {\n\
     name = \"boottime\"\n\
     title = \"Last Boot Time\"\n\
@@ -208,6 +201,7 @@ collection_group {\n\
 collection_group {\n\
   collect_once = yes\n\
   time_threshold = 300\n\
+  measurement = \"meta\"\n\
   metric {\n\
     name = \"gexec\"\n\
     title = \"Gexec Status\"\n\
@@ -221,6 +215,7 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 20\n\
   time_threshold = 90\n\
+  measurement = \"cpu\"\n\
   /* CPU status */\n\
   metric {\n\
     name = \"cpu_user\"\n\
@@ -257,6 +252,10 @@ collection_group {\n\
     value_threshold = \"1.0\"\n\
     title = \"CPU steal\"\n\
   }\n\
+ metric {\n\
+    name = \"cpu_speed\"\n\
+    title = \"CPU Speed\"\n\
+  }\n\
   /* The next two metrics are optional if you want more detail...\n\
      ... since they are accounted for in cpu_system.\n\
   metric {\n\
@@ -272,9 +271,21 @@ collection_group {\n\
   */\n\
 }\n\
 \n\
+/* CPU counts don't change often */\n\
+collection_group {\n\
+  collect_every = 3600\n\
+  time_threshold = 60\n\
+  measurement = \"cpu\"\n\
+  metric {\n\
+    name = \"cpu_num\"\n\
+    title = \"CPU Count\"\n\
+  }\n\
+}\n\
+\n\
 collection_group {\n\
   collect_every = 20\n\
   time_threshold = 90\n\
+  measurement = \"load\"\n\
   /* Load Averages */\n\
   metric {\n\
     name = \"load_one\"\n\
@@ -297,6 +308,7 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 80\n\
   time_threshold = 950\n\
+  measurement = \"proc\"\n\
   metric {\n\
     name = \"proc_run\"\n\
     value_threshold = \"1.0\"\n\
@@ -315,6 +327,7 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 180\n\
+  measurement = \"mem\"\n\
   metric {\n\
     name = \"mem_free\"\n\
     value_threshold = \"1024.0\"\n\
@@ -342,9 +355,25 @@ collection_group {\n\
   }\n\
 }\n\
 \n\
+/* Maximum memory amounts don't change often. */\n\
+collection_group {\n\
+  collect_every = 3600\n\
+  time_threshold = 3600\n\
+  measurement = \"mem\"\n\
+  metric {\n\
+    name = \"mem_total\"\n\
+    title = \"Memory Total\"\n\
+  }\n\
+  metric {\n\
+    name = \"swap_total\"\n\
+    title = \"Swap Space Total\"\n\
+  }\n\
+}\n\
+\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 300\n\
+  measurement = \"net\"\n\
   metric {\n\
     name = \"bytes_out\"\n\
     value_threshold = 4096\n\
@@ -371,6 +400,7 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 1800\n\
   time_threshold = 3600\n\
+  measurement = \"disk\"\n\
   metric {\n\
     name = \"disk_total\"\n\
     value_threshold = 1.0\n\
@@ -381,6 +411,7 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 180\n\
+  measurement = \"disk\"\n\
   metric {\n\
     name = \"disk_free\"\n\
     value_threshold = 1.0\n\
@@ -402,6 +433,7 @@ include (\"" SYSCONFDIR "/conf.d/*.conf\")\n\
 collection_group {\n\
   collect_every = 20\n\
   time_threshold = 90\n\
+  meausurement = \"solaris\"\n\
   metric {\n\
    name = \"rcache\"\n\
    value_threshold = 1.0\n\
@@ -443,6 +475,7 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 90\n\
+  measurement = \"hpux\"\n\
   metric {\n\
     name = \"mem_arm\"\n\
     value_threshold = 1024.0\n\
