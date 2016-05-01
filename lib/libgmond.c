@@ -134,6 +134,7 @@ static cfg_opt_t metric_opts[] = {
 #endif
   CFG_FLOAT("value_threshold", -1, CFGF_NONE),
   CFG_STR("title", NULL, CFGF_NONE ),
+  CFG_STR("measurement", NULL, CFGF_NONE),   /* optional! used for InfluxDB support */
   CFG_END()
 };
 
