@@ -204,6 +204,7 @@ struct Ganglia_metric_callback {
    char *name;          /* metric name */
    float value_threshold;/* the value threshold */
    char *title;         /* Altername metric name or short description */
+   char *measurement;   /* for influxdb, overrides collection group measurement */
    Ganglia_25metric *info;/* the information about this metric */
    metric_func_void cb; /* callback function (deprecated) */
    metric_func cbindexed; /* multi-metric callback function */
@@ -2464,7 +2465,7 @@ setup_metric_callbacks( void )
 }
 
 void
-setup_metric_info_impl(Ganglia_metric_callback *metric_cb, int group_once, const char *name, char *title, float value_threshold, int is_dynamic)
+setup_metric_info_impl(Ganglia_metric_callback *metric_cb, int group_once, const char *name, char *title, float value_threshold, char *measurement, int is_dynamic)
 {
     Ganglia_25metric *metric_info = NULL;
 
@@ -2559,6 +2560,9 @@ setup_metric_info_impl(Ganglia_metric_callback *metric_cb, int group_once, const
         /* Save the location of information about this particular metric */
         metric_cb->info   = metric_info;
     
+        /* Save the location of information about this particular metric */
+        metric_cb->measurement = apr_pstrdup(global_context, measurement);
+
         /* Set the value threshold for this particular metric */
         metric_cb->value_threshold = value_threshold;
     
@@ -2598,9 +2602,10 @@ setup_metric_info(Ganglia_metric_callback *metric_cb, int group_once, cfg_t *met
 {
     char *name            = cfg_getstr  ( metric_cfg, "name");
     char *title           = cfg_getstr  ( metric_cfg, "title");
+    char *measurement     = cfg_getstr  ( metric_cfg, "measurement");
     float value_threshold = cfg_getfloat( metric_cfg, "value_threshold");
 
-    setup_metric_info_impl(metric_cb, group_once, name, title, value_threshold, is_dynamic);
+    setup_metric_info_impl(metric_cb, group_once, name, title, value_threshold, measurement, is_dynamic);
 }
 
 #define PCRE_MAX_SUBPATTERNS 9
@@ -2765,7 +2770,7 @@ setup_collection_groups( void )
                       cb = val;
 
                       /* setup the metric instance */
-                      setup_metric_info_impl (cb, group->once, key, title_r, value_threshold, 1);
+                      setup_metric_info_impl (cb, group->once, key, title_r, value_threshold, group->measurement, 1);
 
                       if (cb->info) {
                           bytes_per_sec += ( (double)(cb->info->msg_size) / (double)group->time_threshold );
@@ -3088,6 +3093,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
             char *value = NULL;
             influxdb_metric_t * metric = NULL;
             influxdb_errors = 0;
+            char *measurement_name = NULL;
 
             debug_msg("\nProcessing influxdb group(%d)", i);
 
@@ -3096,11 +3102,13 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
             //metric = apr_palloc(influxdb_pool, sizeof(influxdb_metric_t));
 
             value = host_metric_value(cb->info, &(cb->msg));
+            measurement_name = cb->measurement    ? apr_pstrndup(influxdb_pool, cb->measurement, MAX_DEF_TAG_LENGTH) :
+                               group->measurement ? apr_pstrndup(influxdb_pool, group->measurement, MAX_DEF_TAG_LENGTH) : NULL; 
             metric = create_influxdb_metric(
                 influxdb_pool,
                 cb->name,
                 value,
-                influxdb_escape_string(influxdb_pool, group->measurement), //make sure it's escaped here...
+                influxdb_escape_string(influxdb_pool, measurement_name), //make sure it's escaped here...
                 guess_type(value),
                 influxdb_timestamp
             );
