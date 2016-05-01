@@ -532,7 +532,11 @@ A better configuration is to have a collection group similar to:
   collection_group {
     measurement = "mem"
     metric { 
-     name = "mem_free"
+      name = "mem_free"
+    }
+    metric { 
+      name = "swap_free"
+      metric= "swap"
     }
   }
 
@@ -542,6 +546,7 @@ metrics could look like this:
   cpu,hostname=stardust cpu_num=32i 1460782210505141000
   cpu,hostname=stardust cpu_user=13.11 1460782210505334000
   mem,hostname=stardust mem_free=116000i 1460782210505388000
+  swap,hostname=stardust swap_free=83116000i 1460782210505388000
 
 Each collection_group has a B<measurement> attribute, with two of the
 three groups having the same value.  This is okay, and in some cases
@@ -549,6 +554,11 @@ suggested configuration.  For example, network packets in/out and network
 bytes in/out may be in different collection groups, but are each could
 clearly be part of "net" measurement within InfluxDB.
 
+Lastly, note that each metric stanza can have it's own B<meaurement>
+attribute.  This will override the value defined in the collection group
+(if present), or the metric name (in the case where the collection group
+lacks a B<measurement> attribute).  This is shown in the I<swap_free>
+metric in the previous example.
 
 
 =head2 Modules
