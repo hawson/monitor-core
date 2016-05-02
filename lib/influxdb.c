@@ -9,6 +9,7 @@
 #include "ganglia.h"
 #include "influxdb.h"
 #include "gm_msg.h"
+#include "gm_scoreboard.h"
 
 #include <confuse.h>
 #include <apr_pools.h>
@@ -430,6 +431,11 @@ void send_influxdb(
 
                 status = influxdb_emit_udp(channel->socket, buf, &buf_len);
                 debug_msg("    Send frag: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
+                if (!status) {
+                    ganglia_scoreboard_inc(PKTS_INFLUXDB_SENT);
+                } else {
+                    ganglia_scoreboard_inc(PKTS_INFLUXDB_FAILED);
+                }
                 lines = 0;
                 buf = NULL;
             }
@@ -458,6 +464,11 @@ void send_influxdb(
             }
 
             status = influxdb_emit_udp(channel->socket, buf, &buf_len);
+            if (!status) {
+                ganglia_scoreboard_inc(PKTS_INFLUXDB_SENT);
+            } else {
+                ganglia_scoreboard_inc(PKTS_INFLUXDB_FAILED);
+            }
             lines = 0;
             debug_msg("    Send final: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
         }

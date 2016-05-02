@@ -41,7 +41,6 @@ typedef enum ganglia_scoreboard_types ganglia_scoreboard_types;
 #define TCP_REQS_XML_DURATION "tcp_requests_xml_duration"
 #define TCP_REQS_INTXML "tcp_requests_intxml"
 #define TCP_REQS_INTXML_DURATION "tcp_requests_intxml_duration"
-#define INFLUXDB_SENT "influxdb_sent_all"
 
 /* predefined gmond scoreboard elements */
 #define PKTS_RECVD_ALL "gmond_pkts_recvd_all"
@@ -56,7 +55,8 @@ typedef enum ganglia_scoreboard_types ganglia_scoreboard_types;
 #define PKTS_SENT_VALUE "gmond_pkts_sent_value"
 #define PKTS_SENT_REQUEST "gmond_pkts_sent_request"
 #define PKTS_SENT_FAILED "gmond_pkts_sent_failed"
-#define PKTS_SENT_INFLUXDB "influxdb_pkts_sent_failed"
+#define PKTS_INFLUXDB_SENT "gmond_influxdb_pkts_sent"
+#define PKTS_INFLUXDB_FAILED "gmond_influxdb_pkts_failed"
 
 /* The scoreboard is only enabled when --enable-status is set on configure */
 #ifdef GSTATUS

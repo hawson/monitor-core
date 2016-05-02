@@ -3333,7 +3333,8 @@ void initialize_scoreboard()
     ganglia_scoreboard_add(PKTS_SENT_METADATA, GSB_READ_RESET);
     ganglia_scoreboard_add(PKTS_SENT_VALUE, GSB_READ_RESET);
     ganglia_scoreboard_add(PKTS_SENT_REQUEST, GSB_READ_RESET);
-    ganglia_scoreboard_add(PKTS_SENT_INFLUXDB, GSB_READ_RESET);
+    ganglia_scoreboard_add(PKTS_INFLUXDB_SENT, GSB_READ_RESET);
+    ganglia_scoreboard_add(PKTS_INFLUXDB_FAILED, GSB_READ_RESET);
 }
 
 int done = 0;
