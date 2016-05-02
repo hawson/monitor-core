@@ -234,7 +234,7 @@ char * build_influxdb_line(
     char empty_str[]="";
 
     if (hostname) {
-        local_hostname = hostname;
+        local_hostname = apr_pstrdup(pool,hostname);
     } else {
         int rc = apr_gethostname( local_hostname, APRMAXHOSTLEN+1, pool);
         if (rc) {
