@@ -3156,13 +3156,16 @@ process_collection_groups( apr_time_t now )
   int i;
   apr_time_t next = 0;
 
-  debug_msg("group_-------");
+  debug_msg("Processing collection groups:");
 
   /* Run through each collection group and collect any data that needs collecting... */
   for(i=0; i< collection_groups->nelts; i++)
     {
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
-      debug_msg("group_coll %d: send=%lu coll=%lu next=%lu now=%lu", i, group->next_send, group->next_collect, next, now);
+
+      if (debug_level >= 10)
+          debug_msg("group_coll %d: send=%lu coll=%lu next=%lu now=%lu", i, group->next_send, group->next_collect, next, now);
+
       if(group->next_collect <= now)
         {
           Ganglia_collection_group_collect(group, now);
@@ -3173,7 +3176,10 @@ process_collection_groups( apr_time_t now )
   for(i=0; i< collection_groups->nelts; i++)
     {
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
-      debug_msg("group_send %d: send=%lu coll=%lu next=%lu now=%lu", i, group->next_send, group->next_collect, next, now);
+      
+      if (debug_level >= 10)
+          debug_msg("group_send %d: send=%lu coll=%lu next=%lu now=%lu", i, group->next_send, group->next_collect, next, now);
+
       if( group->next_send <= now )
         {
           Ganglia_collection_group_send(group, now);
@@ -3186,7 +3192,9 @@ process_collection_groups( apr_time_t now )
       apr_time_t min;
       Ganglia_collection_group *group = ((Ganglia_collection_group **)(collection_groups->elts))[i];
       min = group->next_send < group->next_collect? group->next_send : group->next_collect;
-      debug_msg("group_next %d: send=%lu coll=%lu next=%lu now=%lu min=%ld", i, group->next_send, group->next_collect, next, now, min);
+
+      if (debug_level >= 10)
+          debug_msg("group_next %d: send=%lu coll=%lu next=%lu now=%lu min=%ld", i, group->next_send, group->next_collect, next, now, min);
       if(!next || (min < next)) {
         next = min;
       }
