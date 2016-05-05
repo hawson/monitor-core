@@ -443,12 +443,23 @@ void send_influxdb(
             /* if !buf, make it */
             if (!buf) {
                 buf = apr_pstrcat(channel_pool, line, "\n", NULL);
-                buf_len = line_len;
-                lines = 1;
+                if (buf) {
+                    buf_len = line_len;
+                    lines = 1;
+                } else {
+                    err_quit("Failed appending newline to buffer before sending.  Exiting!");
+                }
             } else {
-                buf = apr_pstrcat(channel_pool, buf, line, "\n", NULL);
-                buf_len = strnlen(buf, max_udp_message_len);
-                lines+=1;
+                int l = strnlen(buf,max_udp_message_len);
+                if ('\n' != buf[l-1])
+                    buf = apr_pstrcat(channel_pool, buf, line, "\n", NULL);
+
+                if (buf) {
+                    buf_len = strnlen(buf, max_udp_message_len);
+                    lines+=1;
+                } else {
+                    err_quit("Failed appending newline to buffer before sending.  Exiting!");
+                }
             }
 
         }
