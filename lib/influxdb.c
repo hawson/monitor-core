@@ -361,6 +361,20 @@ char * influxdb_escape_string(
     return newstr;
 }
 
+/* update_influxdb_scoreboard() is a local function, not 
+ * needed outside the scope of this file */
+#ifdef GSTATUS
+void _update_influxdb_scoreboard(int status) {
+    if (!status) {
+        ganglia_scoreboard_inc(PKTS_INFLUXDB_SENT);
+    } else {
+        ganglia_scoreboard_inc(PKTS_INFLUXDB_FAILED);
+    }
+}
+#else
+#define _update_influxdb_scoreboard(status)
+#endif
+
 void send_influxdb(
     apr_pool_t *pool,
     const apr_array_header_t *influxdb_channels,
@@ -431,12 +445,8 @@ void send_influxdb(
                 }
 
                 status = influxdb_emit_udp(channel->socket, buf, &buf_len);
+                _update_influxdb_scoreboard(status);
                 debug_msg("    Send frag: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
-                if (!status) {
-                    ganglia_scoreboard_inc(PKTS_INFLUXDB_SENT);
-                } else {
-                    ganglia_scoreboard_inc(PKTS_INFLUXDB_FAILED);
-                }
                 lines = 0;
                 buf = NULL;
             }
@@ -476,11 +486,7 @@ void send_influxdb(
             }
 
             status = influxdb_emit_udp(channel->socket, buf, &buf_len);
-            if (!status) {
-                ganglia_scoreboard_inc(PKTS_INFLUXDB_SENT);
-            } else {
-                ganglia_scoreboard_inc(PKTS_INFLUXDB_FAILED);
-            }
+            _update_influxdb_scoreboard(status);
             lines = 0;
             debug_msg("    Send final: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
         }
