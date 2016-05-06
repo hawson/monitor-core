@@ -418,8 +418,9 @@ void send_influxdb(
             if (debug_level > 2)
                 debug_msg("    (%d)->%s", line_len, line);
 
-            /* check current buf_len + new_line_len >= maximum length:  send! */
-            if (buf && (buf_len + line_len >= max_udp_message_len)) {
+            /* check current buf_len + new_line_len >= maximum length-1:  send! */
+            /* The "-1" is in case we need to append a newline at the end */
+            if (buf && (buf_len + line_len >= (max_udp_message_len-1))) {
 
                 apr_size_t orig_len = (unsigned int)buf_len;
                 buf_len = strnlen(buf, max_udp_message_len);
