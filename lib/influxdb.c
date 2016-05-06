@@ -264,7 +264,7 @@ char * build_influxdb_line(
     }
 
 
-    return apr_psprintf(pool, "%s,hostname=%s%s %s=%s %lu",
+    return apr_psprintf(pool, "%s,hostname=%s%s %s=%s %lu\n",
             metric->measurement ? metric->measurement : metric->name,
             local_hostname,
             local_tags,
@@ -375,6 +375,36 @@ void _update_influxdb_scoreboard(int status) {
 #define _update_influxdb_scoreboard(status)
 #endif
 
+/* local helper function */
+int count_lines(const char *buf) {
+    char * pchar = NULL;
+    int count = 0;
+
+    pchar = strchr(buf, '\n');
+    while (NULL != pchar) {
+        count += 1;
+        pchar = strchr(pchar+1, '\n');
+    }
+    return count;
+}
+
+void handle_send_buffer(
+    apr_socket_t *socket,
+    char *buf,
+    apr_size_t *buf_len,
+    int max_udp_message_len,
+    int msg_num) {
+
+    unsigned long int orig_len = (unsigned long int) *buf_len);
+    int status = 0;
+
+    status = influxdb_emit_udp(socket, buf, buf_len);
+    _update_influxdb_scoreboard(status);
+    debug_msg("    Send[%d]: actual %lub, orig %lub, status %d)", msg_num, (unsigned long int)buf_len, orig_len, status);
+    if (get_debug_msg_level() >= 5)
+        debug_msg("Full packet: [%s]", buf);
+}
+
 void send_influxdb(
     apr_pool_t *pool,
     const apr_array_header_t *influxdb_channels,
@@ -385,6 +415,7 @@ void send_influxdb(
 
     int debug_level = get_debug_msg_level();
     int i;
+    int influxdb_packets_sent = 0;
 
     for (i=0; i < influxdb_channels->nelts; i++) {
 
@@ -434,65 +465,37 @@ void send_influxdb(
 
             /* check current buf_len + new_line_len >= maximum length-1:  send! */
             /* The "-1" is in case we need to append a newline at the end */
-            if (buf && (buf_len + line_len >= (max_udp_message_len-1))) {
+            if (buf && (buf_len + line_len >= max_udp_message_len)) {
 
-                apr_size_t orig_len = (unsigned int)buf_len;
-                buf_len = strnlen(buf, max_udp_message_len);
-
-                /* append newline if needed */
-                if ('\n' != buf[buf_len-1]) {
-                    buf = apr_pstrcat(channel_pool, buf, "\n", NULL);
-                }
-
-                status = influxdb_emit_udp(channel->socket, buf, &buf_len);
-                _update_influxdb_scoreboard(status);
-                debug_msg("    Send frag: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
-                lines = 0;
+                handle_send_buffer(channel->socket, buf, &buf_len, max_udp_message_len, influxdb_packets_sent);
+                influxdb_packets_sent += 1;
                 buf = NULL;
             }
 
             /* if !buf, make it */
             if (!buf) {
-                buf = apr_pstrcat(channel_pool, line, "\n", NULL);
-                if (buf) {
-                    buf_len = line_len;
-                    lines = 1;
-                } else {
-                    err_quit("Failed appending newline to buffer before sending.  Exiting!");
-                }
+                buf = apr_pstrdup(channel_pool, line);
             } else {
-                int l = strnlen(buf,max_udp_message_len);
-                if ('\n' != buf[l-1])
-                    buf = apr_pstrcat(channel_pool, buf, line, "\n", NULL);
+                buf = apr_pstrcat(channel_pool, buf, line, NULL);
 
-                if (buf) {
-                    buf_len = strnlen(buf, max_udp_message_len);
-                    lines+=1;
-                } else {
-                    err_quit("Failed appending newline to buffer before sending.  Exiting!");
-                }
+            }
+
+            if (!buf) {
+                err_quit("Failed appending newline to buffer before sending.  Exiting!");
+            } else { 
+                buf_len = strnlen(buf, max_udp_message_len);
+                lines = count_lines(buf);
             }
 
         }
 
         // emit final (perhaps only) UDP packet for this batch of metrics.
         if (lines) {
-
-            unsigned long int orig_len = (unsigned long int )buf_len;
-            buf_len = strnlen(buf, max_udp_message_len);
-
-            /* append newline if needed */
-            if ('\n' != buf[buf_len-1]) {
-                buf = apr_pstrcat(channel_pool, buf, "\n", NULL);
-            }
-
-            status = influxdb_emit_udp(channel->socket, buf, &buf_len);
-            _update_influxdb_scoreboard(status);
-            lines = 0;
-            debug_msg("    Send final: actual %lub, orig %lub, status %d)", buf_len, orig_len, status);
+            handle_send_buffer(channel->socket, buf, &buf_len, max_udp_message_len, -influxdb_packets_sent);
+            influxdb_packets_sent += 1;
         }
-        apr_pool_destroy(channel_pool);
 
+        apr_pool_destroy(channel_pool);
 
     }
 
