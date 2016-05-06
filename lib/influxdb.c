@@ -422,7 +422,7 @@ void send_influxdb(
                 influxdb_escape_string(pool, metric->measurement),
                 metric->value,
                 metric->timestamp,
-                influxdb_escape_string(pool, hostname), /* incase "hostname" is really a service or non-host-like object */
+                influxdb_escape_string(pool, hostname), /* in case "hostname" is really a service or non-host-like object */
                 channel->default_tags /* this is not escaped here, as it is assumed the user has alread handled this in the .conf file. Ha. */
             ) ;
 
@@ -475,8 +475,9 @@ void send_influxdb(
 
         }
 
+        // emit final (perhaps only) UDP packet for this batch of metrics.
         if (lines) {
-            // emit final (perhaps only) UDP packet for this batch of metrics!
+
             unsigned long int orig_len = (unsigned long int )buf_len;
             buf_len = strnlen(buf, max_udp_message_len);
 
