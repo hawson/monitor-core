@@ -115,7 +115,7 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
 void re_init(regex_t* compiled, const char** regexes) {
 
     char re_err[MAX_RE_LENGTH];
-    int i, rv; 
+    int i, rv;
     size_t err_size;
 
     for (i=0; i<=BOOL; i++) {
@@ -123,7 +123,7 @@ void re_init(regex_t* compiled, const char** regexes) {
         err_size = regerror(rv, &compiled[BOOL], re_err, MAX_RE_LENGTH);
         debug_msg("(%d)%s", (int)err_size, re_err);
         if (rv) {
-            err_quit("Failed compiling regex: %s", regexes[i]);            
+            err_quit("Failed compiling regex: %s", regexes[i]);
         } else {
             debug_msg("Intialized regex: /%s/", regexes[i]);
         }
@@ -187,7 +187,7 @@ influxdb_types guess_type(
     } else if (REG_NOMATCH != rc) {
         regerror(rc, &re_compiled[INT], re_err, MAX_RE_LENGTH);
         debug_msg("%s", re_err);
-    } 
+    }
 
     return STR;
 
@@ -281,10 +281,10 @@ void dump_metric(const influxdb_metric_t *metric) {
     if (!metric)
         return;
 
-    debug_msg("    metric=%-10s type=%s", metric->name, 
+    debug_msg("    metric=%-10s type=%s", metric->name,
                               (INT   == type ? "INT" :
                                FLOAT == type ? "FLOAT" :
-                               STR   == type ? "STR" : "UNDEF" )); 
+                               STR   == type ? "STR" : "UNDEF" ));
     debug_msg("     value=%-10s   ts=%lu", metric->value, metric->timestamp);
 }
 
@@ -311,8 +311,8 @@ apr_status_t influxdb_emit_udp(
  * returns non-zero on error.
  */
 int influxdb_escape(
-    char* dest, 
-    const char* src, 
+    char* dest,
+    const char* src,
     unsigned int maxlen
     ) {
 
@@ -354,14 +354,14 @@ char * influxdb_escape_string(
 
     if (strlen) {
         int newstrlen = strlen * 2 + 1; //worst case: escape everything + null
-        newstr = apr_palloc(pool, newstrlen);  
+        newstr = apr_palloc(pool, newstrlen);
         influxdb_escape(newstr, str, newstrlen);
     }
 
     return newstr;
 }
 
-/* update_influxdb_scoreboard() is a local function, not 
+/* update_influxdb_scoreboard() is a local function, not
  * needed outside the scope of this file */
 #ifdef GSTATUS
 void _update_influxdb_scoreboard(int status) {
@@ -482,7 +482,7 @@ void send_influxdb(
 
             if (!buf) {
                 err_quit("Failed appending newline to buffer before sending.  Exiting!");
-            } else { 
+            } else {
                 buf_len = strnlen(buf, max_udp_message_len);
                 lines = count_lines(buf);
             }
