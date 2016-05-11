@@ -1220,10 +1220,54 @@ proc_total_func ( void )
    return val;
 }
 
+/* Linux doens't cleanly report the amont of RAM "in use",
+ * but we can fake it.  This is very, very close to the same
+ * formula used by the "free" and "top" programs from procps-ng
+ * so the numbers should match closely.  Basically:
+ *     mem_used = mem_total - buffers - cache - free - slab*
+ */
 g_val_t
 mem_used_func ( void )
 {
-    g_val_t val = 0;
+    char *p_file;
+
+    char *p_total;
+    char *p_free;
+    char *p_buffers;
+    char *p_cached;
+    char *p_slab_rec;
+    char *p_slab_urec;
+
+    g_val_t val;
+
+    p_file = update_file(&proc_meminfo);
+    p_total     = strstr ( p_file , "MemTotal:");
+    p_free      = strstr ( p_file , "MemFree:");
+    p_buffers   = strstr ( p_file , "Buffers:");
+    p_cached    = strstr ( p_file , "Cached:");
+    p_slab_rec  = strstr ( p_file , "SReclaimable:");
+    p_slab_urec = strstr ( p_file , "SUnreclaim:");
+
+    if (p_total && p_file && p_free && p_buffers && p_cached && p_slab_rec && p_slab_urec) {
+
+        p_total     = skip_token(p_total);
+        p_free      = skip_token(p_free);
+        p_buffers   = skip_token(p_buffers);
+        p_cached    = skip_token(p_cached);
+        p_slab_rec  = skip_token(p_slab_rec);
+        p_slab_urec = skip_token(p_slab_urec);
+
+        val.f = atof(p_total)
+              - atof(p_free)
+              - atof(p_buffers)
+              - atof(p_cached)
+              - atof(p_slab_rec)
+              - atof(p_slab_urec);
+
+    } else {
+        val.f = 0.0;
+    }
+
     return val;
 }
 
