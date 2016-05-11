@@ -621,6 +621,13 @@ mem_total_func ( void )
 }  
 
 g_val_t
+mem_used_func ( void )
+{
+    g_val_t val = 0;
+    return val;
+}
+
+g_val_t
 mem_free_func ( void )
 {
    g_val_t val;

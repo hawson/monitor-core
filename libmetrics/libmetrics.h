@@ -70,6 +70,7 @@ void libmetrics_init( void );
  g_val_t proc_run_func(void);
  g_val_t proc_total_func(void);
  g_val_t mem_free_func(void);
+ g_val_t mem_used_func(void);
  g_val_t mem_shared_func(void);
  g_val_t mem_buffers_func(void);
  g_val_t mem_cached_func(void);

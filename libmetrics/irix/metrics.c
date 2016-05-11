@@ -579,7 +579,7 @@ proc_total_func ( void )
 /*
  * Implement helper function for various memory metrics.
  */
-enum {MEM_TOTAL, MEM_FREE, MEM_SHARED, MEM_BUFFERS, MEM_CACHED};
+enum {MEM_TOTAL, MEM_FREE, MEM_SHARED, MEM_BUFFERS, MEM_CACHED, MEM_USED};
 
 g_val_t
 mem_func( int which )
@@ -601,6 +601,7 @@ mem_func( int which )
       case MEM_SHARED:  val.f = (rmi.dchunkpages+rmi.dpages)*multiplier; break;
       case MEM_BUFFERS: val.f = rmi.bufmem*multiplier; break;
       case MEM_CACHED:  val.f = (rmi.chunkpages-rmi.dchunkpages)*multiplier; break;
+      case MEM_USED  :  val.f = rmi.availrmem * multiplier; break; 
       default:
         err_msg("mem_func() - invalid value for which = %d", which);
     }
@@ -612,6 +613,12 @@ g_val_t
 mem_total_func ( void )
 {
    return mem_func( MEM_TOTAL );
+}
+
+g_val_t
+mem_used_func ( void )
+{
+   return mem_func ( MEM_FREE );
 }
 
 g_val_t

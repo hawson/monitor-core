@@ -480,6 +480,14 @@ proc_run_func( void )
    return val;
 }
 
+/* 100% agree with the comments below about mem_free_func */
+g_val_t
+mem_used_func ( void )
+{
+    g_val_t val = 0;
+    return val;
+}
+
 /*
 ** FIXME - The whole ganglia model of memory is bogus.  Free memory is
 ** generally a bad idea with a modern VM and so is reporting it.  There

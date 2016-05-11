@@ -63,6 +63,8 @@ static const struct metricinfo
   {
   "proc_total", proc_total_func, g_uint32},
   {
+  "mem_used", mem_used_func, g_float},
+  {
   "mem_free", mem_free_func, g_float},
   {
   "mem_shared", mem_shared_func, g_float},
