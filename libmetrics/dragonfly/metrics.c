@@ -484,7 +484,12 @@ proc_run_func( void )
 g_val_t
 mem_used_func ( void )
 {
-    g_val_t val = 0;
+    g_val_t total, free, val;
+
+    total = mem_total_func();
+    free = mem_free_func();
+    val.f = total.f - free.f;
+
     return val;
 }
 
