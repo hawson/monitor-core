@@ -395,7 +395,7 @@ void handle_send_buffer(
     int max_udp_message_len,
     int msg_num) {
 
-    unsigned long int orig_len = (unsigned long int) *buf_len);
+    unsigned long int orig_len = (unsigned long int) *buf_len;
     int status = 0;
 
     status = influxdb_emit_udp(socket, buf, buf_len);
