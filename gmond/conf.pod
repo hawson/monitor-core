@@ -486,18 +486,29 @@ to note is the use of substitutions within the argument to B<title>.
 
 If both B<name> and B<name_match> are specified, then B<name> is ignored.
 
-If InfluxDB is being used, adding the B<measurement> attribute
-is I<strongly> recommended.  When present, gmond will use it as a
-C<measurement> name when sending data to influxdb, set tags and values
-as necessary.  By way of explanation:  InfluxDB organizes data into
-C<databases>, which contain C<series> of data.  Each series contains
-C<measurements> at a specific C<timestamp>.  Each measurement contains
-one or more C<values>.  Gmond will convert collected metrics as best it
-can to fit this data model.
+If InfluxDB is being used, the B<measurement> attribute is also available,
+otherwise it will be silently ignored.  When present, gmond will use it
+as the C<measurement> name when sending data to influxdb.  (By way of
+explanation: InfluxDB organizes data into C<databases>, which contain
+C<series> of data.  Each series contains C<measurement>s at a specific
+C<timestamp>s.  Each measurement further contains one or more C<values>.
+Gmond will convert collected metrics as best it can to fit this data
+model:  mapping channels to databases, modules and collection groups
+to series and measurements within the database, and metrics to values
+within a measurement.
 
-If B<measurement> is not used, the metric name is re-used as the
+If B<measurement> is absent, the C<MGROUP> metadata attribute from the
+calling gmond module will be used if it is present.  This is the same
+attribute used to set the C<GROUP> XML tag, and is also processed by
+the web frontend when grouping metric graphs.
+
+If there is no C<MGROUP> attribute, the metric name is re-used as the
 InfluxDB "measurement."  This is a sub-optimal configuration, so far as
 the InfluxDB schema is concerned, but it "should" work.
+
+If a B<measurement> attribute appears in a B<collection_group> stanza,
+it applies to all metrics in that group.  If it appears in a B<metric>
+stanza, it will apply only to that metric.
 
 Using the "cpu_num" example from above, when data from that group is
 sent to influxdb, an InfluxDB line simliar to this will be sent:
@@ -509,7 +520,7 @@ This duplicates the value "cpu_num" as the measurement.
 A better configuration is to have a collection group similar to:
 
   collection_group {
-    measurement = "cpu"
+    /* this module sets MGROUP to "cpu" */
     collect_once   = yes
     time_threshold = 1800
     metric {
@@ -519,7 +530,7 @@ A better configuration is to have a collection group similar to:
   }
 
   collection_group {
-    measurement = "cpu"
+    measurement = "cpu_group"
     collect_every = 60
     time_threshold = 300
     metric {
@@ -530,13 +541,13 @@ A better configuration is to have a collection group similar to:
   }
 
   collection_group {
-    measurement = "mem"
+    /* this module sets MGROUP to "mem" */
     metric { 
       name = "mem_free"
     }
     metric { 
       name = "swap_free"
-      metric= "swap"
+      measurement = "swap"
     }
   }
 
@@ -544,7 +555,7 @@ Sample output lines for these three collection groups and corresponding
 metrics could look like this:
 
   cpu,hostname=stardust cpu_num=32i 1460782210505141000
-  cpu,hostname=stardust cpu_user=13.11 1460782210505334000
+  cpu_group,hostname=stardust cpu_user=13.11 1460782210505334000
   mem,hostname=stardust mem_free=116000i 1460782210505388000
   swap,hostname=stardust swap_free=83116000i 1460782210505388000
 
