@@ -3094,16 +3094,21 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
             influxdb_metric_t * metric = NULL;
             influxdb_errors = 0;
             char *measurement_name = NULL;
+            char *module_group = NULL;
 
             debug_msg("\nProcessing influxdb group(%d)", i);
 
 
             /* create a new metric obbject from the main metric structure */
-            //metric = apr_palloc(influxdb_pool, sizeof(influxdb_metric_t));
 
             value = host_metric_value(cb->info, &(cb->msg));
+
+            module_group = apr_table_get(cb->modp->metrics_info->metadata, MGROUP);
+
             measurement_name = cb->measurement    ? apr_pstrndup(influxdb_pool, cb->measurement, MAX_DEF_TAG_LENGTH) :
-                               group->measurement ? apr_pstrndup(influxdb_pool, group->measurement, MAX_DEF_TAG_LENGTH) : NULL; 
+                               group->measurement ? apr_pstrndup(influxdb_pool, group->measurement, MAX_DEF_TAG_LENGTH) : 
+                               module_group       ? module_group : NULL; 
+
             metric = create_influxdb_metric(
                 influxdb_pool,
                 cb->name,
