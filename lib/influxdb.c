@@ -286,6 +286,8 @@ void dump_metric(const influxdb_metric_t *metric) {
                                FLOAT == type ? "FLOAT" :
                                STR   == type ? "STR" : "UNDEF" ));
     debug_msg("     value=%-10s   ts=%lu", metric->value, metric->timestamp);
+    debug_msg("     group=%-10s", metric->measurement);
+
 }
 
 
