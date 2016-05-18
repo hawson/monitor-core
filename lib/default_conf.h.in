@@ -71,7 +71,7 @@ udp_recv_channel {\n\
   bind = 239.2.11.71\n\
   retry_bind = true\n\
   # Size of the UDP buffer. If you are handling lots of metrics you really\n\
-  # should bump it up to e.g. 10MB or even higher.\n\ 
+  # should bump it up to e.g. 10MB or even higher.\n\
   # buffer = 10485760\n\
 }\n\
 \n\
@@ -162,7 +162,6 @@ modules {\n\
 collection_group {\n\
   collect_once = yes\n\
   time_threshold = 20\n\
-  measurement = \"heartbeat\"\n\
   metric {\n\
     name = \"heartbeat\"\n\
   }\n\
@@ -172,7 +171,6 @@ collection_group {\n\
 collection_group {\n\
   collect_once = yes\n\
   time_threshold = 60\n\
-  measurement = \"meta\"\n\
   metric {\n\
     name = \"boottime\"\n\
     title = \"Last Boot Time\"\n\
@@ -201,7 +199,6 @@ collection_group {\n\
 collection_group {\n\
   collect_once = yes\n\
   time_threshold = 300\n\
-  measurement = \"meta\"\n\
   metric {\n\
     name = \"gexec\"\n\
     title = \"Gexec Status\"\n\
@@ -215,7 +212,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 20\n\
   time_threshold = 90\n\
-  measurement = \"cpu\"\n\
   /* CPU status */\n\
   metric {\n\
     name = \"cpu_user\"\n\
@@ -285,7 +281,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 20\n\
   time_threshold = 90\n\
-  measurement = \"load\"\n\
   /* Load Averages */\n\
   metric {\n\
     name = \"load_one\"\n\
@@ -308,7 +303,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 80\n\
   time_threshold = 950\n\
-  measurement = \"proc\"\n\
   metric {\n\
     name = \"proc_run\"\n\
     value_threshold = \"1.0\"\n\
@@ -327,7 +321,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 180\n\
-  measurement = \"mem\"\n\
   metric {\n\
     name = \"mem_free\"\n\
     value_threshold = \"1024.0\"\n\
@@ -358,8 +351,7 @@ collection_group {\n\
 /* Maximum memory amounts don't change often. */\n\
 collection_group {\n\
   collect_every = 3600\n\
-  time_threshold = 3600\n\
-  measurement = \"mem\"\n\
+  time_threshold = 300\n\
   metric {\n\
     name = \"mem_total\"\n\
     title = \"Memory Total\"\n\
@@ -373,7 +365,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 300\n\
-  measurement = \"net\"\n\
   metric {\n\
     name = \"bytes_out\"\n\
     value_threshold = 4096\n\
@@ -400,7 +391,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 1800\n\
   time_threshold = 3600\n\
-  measurement = \"disk\"\n\
   metric {\n\
     name = \"disk_total\"\n\
     value_threshold = 1.0\n\
@@ -411,7 +401,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 180\n\
-  measurement = \"disk\"\n\
   metric {\n\
     name = \"disk_free\"\n\
     value_threshold = 1.0\n\
@@ -433,7 +422,6 @@ include (\"" SYSCONFDIR "/conf.d/*.conf\")\n\
 collection_group {\n\
   collect_every = 20\n\
   time_threshold = 90\n\
-  meausurement = \"solaris\"\n\
   metric {\n\
    name = \"rcache\"\n\
    value_threshold = 1.0\n\
@@ -475,7 +463,6 @@ collection_group {\n\
 collection_group {\n\
   collect_every = 40\n\
   time_threshold = 90\n\
-  measurement = \"hpux\"\n\
   metric {\n\
     name = \"mem_arm\"\n\
     value_threshold = 1024.0\n\
