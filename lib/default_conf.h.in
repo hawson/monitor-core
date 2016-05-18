@@ -248,10 +248,6 @@ collection_group {\n\
     value_threshold = \"1.0\"\n\
     title = \"CPU steal\"\n\
   }\n\
- metric {\n\
-    name = \"cpu_speed\"\n\
-    title = \"CPU Speed\"\n\
-  }\n\
   /* The next two metrics are optional if you want more detail...\n\
      ... since they are accounted for in cpu_system.\n\
   metric {\n\
@@ -265,17 +261,6 @@ collection_group {\n\
     title = \"CPU sintr\"\n\
   }\n\
   */\n\
-}\n\
-\n\
-/* CPU counts don't change often */\n\
-collection_group {\n\
-  collect_every = 3600\n\
-  time_threshold = 60\n\
-  measurement = \"cpu\"\n\
-  metric {\n\
-    name = \"cpu_num\"\n\
-    title = \"CPU Count\"\n\
-  }\n\
 }\n\
 \n\
 collection_group {\n\
@@ -348,7 +333,7 @@ collection_group {\n\
   }\n\
 }\n\
 \n\
-/* Maximum memory amounts don't change often. */\n\
+/* Maximum memory amounts and CPU counts/speeds don't change often. */\n\
 collection_group {\n\
   collect_every = 3600\n\
   time_threshold = 300\n\
@@ -359,6 +344,14 @@ collection_group {\n\
   metric {\n\
     name = \"swap_total\"\n\
     title = \"Swap Space Total\"\n\
+  }\n\
+  metric {\n\
+    name = \"cpu_speed\"\n\
+    title = \"CPU Speed\"\n\
+  }\n\
+  metric {\n\
+    name = \"cpu_num\"\n\
+    title = \"CPU Count\"\n\
   }\n\
 }\n\
 \n\
