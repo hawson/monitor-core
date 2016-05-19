@@ -72,7 +72,7 @@ typedef struct influxdb_metric_t {
  * we need a bit more than that */
 typedef struct influxdb_send_channel {
     apr_socket_t *socket;
-    char default_tags[MAX_VALUE_LENGTH]; //meh, should be char*
+    char influxdb_tags[MAX_VALUE_LENGTH]; //meh, should be char*
 } influxdb_send_channel;
 
 influxdb_metric_t * create_influxdb_metric(

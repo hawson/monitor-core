@@ -87,7 +87,7 @@ tcp_accept_channel {\n\
 #influxdb_send_channel {\n\
 #    host = \"127.0.0.1\"\n\
 #    port = 8089\n\
-#    default_tags = \"tag=foo,zone=us-east\"\n\
+#    tags = \"tag=foo,zone=us-east\"\n\
 #}\n\
 \n\
 "

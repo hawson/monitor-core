@@ -100,7 +100,7 @@ static cfg_opt_t udp_send_channel_opts[] = {
 static cfg_opt_t influxdb_send_channel_opts[] = {
   CFG_STR("host", NULL, CFGF_NONE ),
   CFG_INT("port", -1, CFGF_NONE ),
-  CFG_STR("default_tags", NULL, CFGF_NONE),
+  CFG_STR("tags", NULL, CFGF_NONE),
   CFG_END()
 };
 

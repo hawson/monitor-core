@@ -70,30 +70,30 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         cfg_t *influxdb_cfg = NULL;
         long int port = 0;
         char *host = NULL;
-        char *default_tags = NULL;
+        char *influxdb_tags = NULL;
         int def_tag_len =0;
 
         influxdb_cfg = cfg_getnsec(cfg, "influxdb_send_channel", (unsigned int) i);
         host         = cfg_getstr(influxdb_cfg, "host");
         port         = cfg_getint(influxdb_cfg, "port");
-        default_tags = cfg_getstr(influxdb_cfg, "default_tags");
+        influxdb_tags = cfg_getstr(influxdb_cfg, "tags");
 
         if (NULL == host)
             err_quit("Invalid or missing influxdb_send_channel->host attribute");
         if (!port)
             err_quit("Invalid or missing influxdb_send_channel->port attribute");
 
-        if (default_tags) {
-            def_tag_len = strnlen(default_tags, MAX_DEF_TAG_LENGTH);
-            strncpy(channel->default_tags, default_tags, MAX_DEF_TAG_LENGTH);
+        if (influxdb_tags) {
+            def_tag_len = strnlen(influxdb_tags, MAX_DEF_TAG_LENGTH);
+            strncpy(channel->influxdb_tags, influxdb_tags, MAX_DEF_TAG_LENGTH);
         }
 
-        channel->default_tags[def_tag_len] = '\0';
+        channel->influxdb_tags[def_tag_len] = '\0';
 
-        debug_msg("influxdb_send_channel: dest=%s:%lu default_tags=%s",
+        debug_msg("influxdb_send_channel: dest=%s:%lu influxdb_tags=%s",
                   host ? host : "NULL",
                   port,
-                  channel->default_tags ? channel->default_tags : "NULL");
+                  channel->influxdb_tags ? channel->influxdb_tags : "NULL");
 
         channel->socket = create_udp_client(context, host, (apr_port_t)port, NULL, NULL, 0);
 
@@ -438,7 +438,7 @@ void send_influxdb(
         channel = APR_ARRAY_IDX(influxdb_channels, i, influxdb_send_channel*);
 
         if (debug_level ) {
-            debug_msg("  default channel tags: %s", channel->default_tags);
+            debug_msg("  tags: %s", channel->influxdb_tags);
         }
 
         debug_msg("  starting metric loop");
@@ -456,10 +456,10 @@ void send_influxdb(
                 metric->value,
                 metric->timestamp,
                 influxdb_escape_string(pool, hostname), /* in case "hostname" is really a service or non-host-like object */
-                channel->default_tags /* this is not escaped here, as it is assumed the user has alread handled this in the .conf file. Ha. */
+                channel->influxdb_tags /* this is not escaped here, as it is assumed the user has alread handled this in the .conf file. Ha. */
             ) ;
 
-            line = build_influxdb_line(channel_pool, metric, hostname, channel->default_tags);
+            line = build_influxdb_line(channel_pool, metric, hostname, channel->influxdb_tags);
             line_len = strnlen(line, max_udp_message_len);
 
             if (debug_level > 2)
