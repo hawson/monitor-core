@@ -3494,7 +3494,7 @@ main ( int argc, char *argv[] )
 
   /* setup influxdb channels */
   influxdb_send_channels = Ganglia_influxdb_send_channels_create((Ganglia_pool)global_context, 
-                                                                 (Ganglia_gmond_config)config_file);
+                                                                 (Ganglia_gmond_config)config_file, tags);
 
   if(!udp_send_channels && !influxdb_send_channels)
     {

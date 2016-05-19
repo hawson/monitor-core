@@ -40,7 +40,7 @@ static const char* regexes[] = {
 
 /* Send create InfluxDB send channels */
 Ganglia_influxdb_send_channels
-Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config )
+Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config config, char* global_tags )
 {
     int i;
     apr_pool_t *context = (apr_pool_t*)p;
@@ -87,6 +87,13 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
             def_tag_len = strnlen(influxdb_tags, MAX_DEF_TAG_LENGTH);
             strncpy(channel->influxdb_tags, influxdb_tags, MAX_DEF_TAG_LENGTH);
         }
+
+        if (global_tags) {
+            strncat(channel->influxdb_tags, ",", 1);
+            strncat(channel->influxdb_tags, global_tags, MAX_DEF_TAG_LENGTH-def_tag_len-1);
+            def_tag_len = strnlen(global_tags, MAX_DEF_TAG_LENGTH) + 1 + strnlen(influxdb_tags, MAX_DEF_TAG_LENGTH);
+        }
+
 
         channel->influxdb_tags[def_tag_len] = '\0';
 

@@ -52,7 +52,7 @@ Ganglia_udp_send_channels_create(Ganglia_pool p, Ganglia_gmond_config config);
 void Ganglia_udp_send_channels_destroy(Ganglia_udp_send_channels channels);
 
 Ganglia_influxdb_send_channels
-Ganglia_influxdb_send_channels_create(Ganglia_pool p, Ganglia_gmond_config config);
+Ganglia_influxdb_send_channels_create(Ganglia_pool p, Ganglia_gmond_config config, char* global_tags);
 void Ganglia_influxdb_send_channels_destroy(Ganglia_influxdb_send_channels channels);
 
 int Ganglia_udp_send_message(Ganglia_udp_send_channels channels, char *buf, int len );
