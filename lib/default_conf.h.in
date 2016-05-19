@@ -172,6 +172,14 @@ collection_group {\n\
   collect_once = yes\n\
   time_threshold = 60\n\
   metric {\n\
+    name = \"cpu_num\"\n\
+    title = \"CPU Count\"\n\
+  }\n\
+  metric {\n\
+    name = \"mem_total\"\n\
+    title = \"Memory Total\"\n\
+  }\n\
+  metric {\n\
     name = \"boottime\"\n\
     title = \"Last Boot Time\"\n\
   }\n\
@@ -193,6 +201,21 @@ collection_group {\n\
   }\n\
 }\n\
 \n\
+\n\
+/* Maximum memory amounts and CPU counts/speeds don't change often. */\n\
+collection_group {\n\
+  collect_every = 60\n\
+  time_threshold = 300\n\
+  metric {\n\
+    name = \"swap_total\"\n\
+    title = \"Swap Space Total\"\n\
+  }\n\
+  metric {\n\
+    name = \"cpu_speed\"\n\
+    title = \"CPU Speed\"\n\
+    value_threshold = \"1.0\"\n\
+  }\n\
+}\n\
 /* This collection group will send the status of gexecd for this host\n\
    every 300 secs.*/\n\
 /* Unlike 2.5.x the default behavior is to report gexecd OFF. */\n\
@@ -259,6 +282,19 @@ collection_group {\n\
     name = \"cpu_sintr\"\n\
     value_threshold = \"1.0\"\n\
     title = \"CPU sintr\"\n\
+  }\n\
+  */\n\
+  /* The next two metrics are optional if you want more detail...\n\
+     ... since they are accounted for in cpu_user and cpu_nice.\n\
+  metric {\n\
+    name = \"cpu_guest\"\n\
+    value_threshold = \"1.0\"\n\
+    title = \"CPU guest\"\n\
+  }\n\
+  metric {\n\
+    name = \"cpu_gnice\"\n\
+    value_threshold = \"1.0\"\n\
+    title = \"CPU gnice\"\n\
   }\n\
   */\n\
 }\n\
@@ -330,28 +366,6 @@ collection_group {\n\
     name = \"swap_free\"\n\
     value_threshold = \"1024.0\"\n\
     title = \"Free Swap Space\"\n\
-  }\n\
-}\n\
-\n\
-/* Maximum memory amounts and CPU counts/speeds don't change often. */\n\
-collection_group {\n\
-  collect_every = 3600\n\
-  time_threshold = 300\n\
-  metric {\n\
-    name = \"mem_total\"\n\
-    title = \"Memory Total\"\n\
-  }\n\
-  metric {\n\
-    name = \"swap_total\"\n\
-    title = \"Swap Space Total\"\n\
-  }\n\
-  metric {\n\
-    name = \"cpu_speed\"\n\
-    title = \"CPU Speed\"\n\
-  }\n\
-  metric {\n\
-    name = \"cpu_num\"\n\
-    title = \"CPU Count\"\n\
   }\n\
 }\n\
 \n\
