@@ -71,7 +71,9 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
         long int port = 0;
         char *host = NULL;
         char *influxdb_tags = NULL;
-        int def_tag_len =0;
+        int influxdb_tags_len = 0;
+        int global_tags_len = 0;
+        int total_tags_len = 0;
 
         influxdb_cfg = cfg_getnsec(cfg, "influxdb_send_channel", (unsigned int) i);
         host         = cfg_getstr(influxdb_cfg, "host");
@@ -84,18 +86,25 @@ Ganglia_influxdb_send_channels_create( Ganglia_pool p, Ganglia_gmond_config conf
             err_quit("Invalid or missing influxdb_send_channel->port attribute");
 
         if (influxdb_tags) {
-            def_tag_len = strnlen(influxdb_tags, MAX_DEF_TAG_LENGTH);
+            influxdb_tags_len = strnlen(influxdb_tags, MAX_DEF_TAG_LENGTH);
             strncpy(channel->influxdb_tags, influxdb_tags, MAX_DEF_TAG_LENGTH);
         }
 
         if (global_tags) {
-            strncat(channel->influxdb_tags, ",", 1);
-            strncat(channel->influxdb_tags, global_tags, MAX_DEF_TAG_LENGTH-def_tag_len-1);
-            def_tag_len = strnlen(global_tags, MAX_DEF_TAG_LENGTH) + 1 + strnlen(influxdb_tags, MAX_DEF_TAG_LENGTH);
+            unsigned int offset = 0;
+
+            global_tags_len = strnlen(global_tags, MAX_DEF_TAG_LENGTH);
+
+            if (influxdb_tags) {
+                strncat(channel->influxdb_tags, ",", 1);
+                offset += 1;
+                global_tags_len += 1;
+            }
+            strncat(channel->influxdb_tags, global_tags, MAX_DEF_TAG_LENGTH - influxdb_tags_len - offset);
         }
 
-
-        channel->influxdb_tags[def_tag_len] = '\0';
+        total_tags_len = influxdb_tags_len + global_tags_len;
+        channel->influxdb_tags[total_tags_len] = '\0';
 
         debug_msg("influxdb_send_channel: dest=%s:%lu influxdb_tags=%s",
                   host ? host : "NULL",
