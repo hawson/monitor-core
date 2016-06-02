@@ -3134,7 +3134,7 @@ Ganglia_collection_group_send( Ganglia_collection_group *group, apr_time_t now)
         if(!errors || (influxdb_send_channels && !influxdb_errors))
           {
             /* If the message send ok. Schedule the next time threshold. */
-            debug_msg("Setting collect delta = %lu", group->next_send * APR_USEC_PER_SEC);
+            debug_msg("Setting collect delta = %lu", group->time_threshold * APR_USEC_PER_SEC);
             group->next_send = now + (group->time_threshold * APR_USEC_PER_SEC);
           }
         else
